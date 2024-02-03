@@ -41,3 +41,7 @@
 _Nand to Tetris_ 에서 제공하는 실습 예제를 통해 직접 구현할 수 있고, coursera 코스를 통해 평가받을 수도 있다.
 
 자세한 건 공식 홈페이지를 참고하자.
+
+## 추가
+
+시몬 쇼켄의 _Nand to Tetris_ 와 관련된 [TED 강연](https://www.ted.com/talks/shimon_schocken_the_self_organizing_computer_course?language=ko&subtitle=ko)이 있다.
