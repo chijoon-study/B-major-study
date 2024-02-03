@@ -1,0 +1,7 @@
+There is no need to modify the contents of this file.
+All you have to do is submit it as is, following the 
+Project 0 guidelines in your course website.
+
+It is possible that the Nand to Tetris course that
+you are taking does not require a project 0 submission.
+That's OK.
