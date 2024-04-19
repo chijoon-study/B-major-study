@@ -1,5 +1,6 @@
 import sys
 import os
+import glob
 
 """
 이전 코드가 잘 안되서, 다시 구현하는 중
@@ -93,8 +94,8 @@ class CodeWriter:
         # 비교문 구현 시에 필요한 분기 작업의 식별자 역할
         self.bool_count = 0
 
-        # 확장자를 제외한 파일 이름 가져오기
-        self.curr_file = os.path.splitext(os.path.basename(path))[0]
+        # VMTranslator가 setFilename 호출해서 설정해줌
+        self.curr_file = None
 
     def writeArithmetic(self, command) -> None:
         # 근데 이거 그냥 중복 감안하고 걍 문자열로 저장해도 될거 같은데, pushpop 부분도 그렇고
@@ -258,11 +259,8 @@ class CodeWriter:
     def writeReturn(self):
         pass
 
-    # def ㅁㅁ(self, command_type, segment, index) -> None:
-    #     # goto문은 조건문 이후에 읽어짐
-    #     # pop해서 조건문 결과 확인하고, 맞으면 특정 Label로 이동
-    #     # 아닌 경우
-    #     pass
+    def setFileName(self, filename):
+        self.curr_file = filename
 
     def close(self) -> None:
         self.file.close()
@@ -305,15 +303,29 @@ class VMTranslator:
         if len(args) != 2:
             raise Exception('파일 경로를 포함하는 하나의 인자가 필요합니다.')
 
-        # ex: 절대경로/OOO.asm
-        file_location, vm_file_name = os.path.split(args[1])
-        file_name, vm_extension = os.path.splitext(vm_file_name)
-        file_path = file_location + "/" + file_name
+        self.path = args[1]
+        self.is_dir = os.path.isdir(self.path)
 
-        self.parser = Parser(file_path + ".vm")
-        self.codeWriter = CodeWriter(file_path + ".asm")
+        # asm_file_name == .vm 제외한 파일 이름 or 디렉토리 이름
+        if self.is_dir:
+            # 가장 깊은 디렉토리 이름
+            file_name = os.path.basename(os.path.normpath(self.path))
+        else:
+            # 파일 경로의 OO.vm에서 확장자를 제거한 OO
+            file_name = self.get_filename(self.path)
+        file_location = os.path.split(self.path)[0]
+        self.codeWriter = CodeWriter(os.path.join(file_location, file_name + ".asm"))
+        self.parser = None
 
     def run(self) -> None:
+        if self.is_dir:
+            self.translate_directory()
+        else:
+            self.translate_file(self.path, self.get_filename(self.path))
+
+        self.codeWriter.close()
+
+    def process_translate(self) -> None:
         while self.parser.hasMoreLines():
             self.parser.advance()
             cmd_type = self.parser.commandType()
@@ -327,11 +339,28 @@ class VMTranslator:
                 self.codeWriter.writeGoto(self.parser.arg1())
             elif cmd_type == 'C_IF':
                 self.codeWriter.writeIf(self.parser.arg1())
+            elif cmd_type == 'C_FUNCTION':
+                self.codeWriter.writeFunction(self.parser.arg1(), self.parser.arg2())
+            elif cmd_type == 'C_CALL':
+                self.codeWriter.writeCall(self.parser.arg1(), self.parser.arg2())
+            elif cmd_type == 'C_RETURN':
+                self.codeWriter.writeReturn()
             else:
                 raise Exception(f'처리하지 않는 CommandType: {cmd_type}')
-        # 파일 close
+
+    def translate_directory(self) -> None:
+        vm_files = glob.glob(os.path.join(self.path, '*.vm'))
+        for vm_file in vm_files:
+            self.translate_file(vm_file, self.get_filename(vm_file))
+
+    def get_filename(self, vm_file):
+        return os.path.basename(vm_file)[:-3]
+
+    def translate_file(self, path, file_name) -> None:
+        self.parser = Parser(path)
+        self.codeWriter.setFileName(file_name)
+        self.process_translate()
         self.parser.close()
-        self.codeWriter.close()
 
 
 # 절대경로만 가능
