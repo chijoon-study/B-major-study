@@ -25,7 +25,7 @@ class Parser:
             line = self.file.readline()
             if line == '':
                 return False
-            if not (line.startswith('//') or line.startswith('\n')):
+            if not (line.lstrip().startswith('//') or line.startswith('\n')):
                 self.file.seek(current_position)
                 return True
 
@@ -40,15 +40,18 @@ class Parser:
         self.command_type = self.command_dict[cmd_split[0]]
 
         self.argument0 = cmd_split[0]
-        if not self.command_type == "C_ARITHMETIC":  # C_ARITHMETIC 은 인자가 없음
-            self.argument1 = cmd_split[1]
+        if self.command_type in ['C_ARITHMETIC', 'C_RETURN']:  # 인수가 없는 경우
+            return
+        self.argument1 = cmd_split[1]  # 그 외에는 최소 1개씩은 있음
+        if self.command_type in ['C_POP', 'C_PUSH', 'C_FUNCTION', 'C_CALL']:  # 인수가 2개인 경우
             self.argument2 = cmd_split[2]
+            return
 
     def commandType(self) -> str:
         return self.command_type
 
     def arg1(self) -> str:
-        if self.command_type == "C_ARITHMETIC":
+        if self.command_type == "C_ARITHMETIC":  # C_RETURN은 arg1() 호출 안하는게 구현 시 규칙이라 굳이 검사 X
             return self.argument0
         return self.argument1
 
@@ -77,8 +80,8 @@ class Parser:
         'goto': 'C_GOTO',
         'if-goto': 'C_IF',
         'function': 'C_FUNCTION',
-        'call': 'C_RETURN',
-        'return': 'C_CALL'
+        'return': 'C_RETURN',
+        'call': 'C_CALL'
     }
 
 
@@ -226,13 +229,25 @@ class CodeWriter:
             raise ValueError
 
     def writeLabel(self, label):
-        pass
+        self.write(f'({self.curr_file}${label})')
 
     def writeGoto(self, label):
-        pass
+        # @label, 0;JMP: goto @label
+        self.write(f'@{self.curr_file}${label}')
+        self.write('0;JMP')
 
     def writeIf(self, label):
-        pass
+        # @SP, M=M+1: sp -= 1
+        self.write('@SP')
+        self.write('M=M-1')
+
+        # A=M, D=M: D = *sp
+        self.write('A=M')
+        self.write('D=M')
+
+        # @label, D;JNE: if D != 0(false) then goto @label
+        self.write(f'@{self.curr_file}${label}')
+        self.write('D;JNE')
 
     def writeFunction(self, function_name, n_vars):
         pass
@@ -306,6 +321,12 @@ class VMTranslator:
                 self.codeWriter.writeArithmetic(self.parser.arg1())
             elif cmd_type in ['C_POP', 'C_PUSH']:
                 self.codeWriter.writePushPop(cmd_type, self.parser.arg1(), self.parser.arg2())
+            elif cmd_type == 'C_LABEL':
+                self.codeWriter.writeLabel(self.parser.arg1())
+            elif cmd_type == 'C_GOTO':
+                self.codeWriter.writeGoto(self.parser.arg1())
+            elif cmd_type == 'C_IF':
+                self.codeWriter.writeIf(self.parser.arg1())
             else:
                 raise Exception(f'처리하지 않는 CommandType: {cmd_type}')
         # 파일 close
@@ -315,7 +336,6 @@ class VMTranslator:
 
 # 절대경로만 가능
 VMTranslator(sys.argv).run()
-
 
 # arg 변수 위치는 스택 최신 스택 - nArgs(그 인수 개수)
 # caller의 정보를 가지고 있는 frame을 저장함. 거기에는 메모리 segment(LCL, THAT 등), return시 사용할 주소 등이 포함된다.
