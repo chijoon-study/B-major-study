@@ -72,7 +72,13 @@ class Parser:
         'lt': 'C_ARITHMETIC',
         'and': 'C_ARITHMETIC',
         'or': 'C_ARITHMETIC',
-        'not': 'C_ARITHMETIC'
+        'not': 'C_ARITHMETIC',
+        'label': 'C_LABEL',
+        'goto': 'C_GOTO',
+        'if-goto': 'C_IF',
+        'function': 'C_FUNCTION',
+        'call': 'C_RETURN',
+        'return': 'C_CALL'
     }
 
 
@@ -219,6 +225,30 @@ class CodeWriter:
         else:
             raise ValueError
 
+    def writeLabel(self, label):
+        pass
+
+    def writeGoto(self, label):
+        pass
+
+    def writeIf(self, label):
+        pass
+
+    def writeFunction(self, function_name, n_vars):
+        pass
+
+    def writeCall(self, function_name, n_vars):
+        pass
+
+    def writeReturn(self):
+        pass
+
+    # def ㅁㅁ(self, command_type, segment, index) -> None:
+    #     # goto문은 조건문 이후에 읽어짐
+    #     # pop해서 조건문 결과 확인하고, 맞으면 특정 Label로 이동
+    #     # 아닌 경우
+    #     pass
+
     def close(self) -> None:
         self.file.close()
 
@@ -250,7 +280,6 @@ class CodeWriter:
         'that': 'THAT',
         'pointer': 3,  # R3~R4. THIS == R3
         'temp': 5,  # R5~R12
-        'static': 16,  # R15~R255
         'constant': None,  # 주소 안씀
         'static': None  # 주소 대신 별개의 값
     }
@@ -286,3 +315,7 @@ class VMTranslator:
 
 # 절대경로만 가능
 VMTranslator(sys.argv).run()
+
+
+# arg 변수 위치는 스택 최신 스택 - nArgs(그 인수 개수)
+# caller의 정보를 가지고 있는 frame을 저장함. 거기에는 메모리 segment(LCL, THAT 등), return시 사용할 주소 등이 포함된다.
