@@ -8,6 +8,10 @@ import glob
 """
 
 
+# SYS 호출 안하면 성공하는데,
+# SYS 호출하면 SimoleFunction 실패함
+
+
 class Parser:
     def __init__(self, path) -> None:
         self.file = open(path, 'r')
@@ -94,8 +98,19 @@ class CodeWriter:
         # 비교문 구현 시에 필요한 분기 작업의 식별자 역할
         self.bool_count = 0
 
+        # 함수 retrun문 호출 시 필요한 식별자 역할 - 한 함수가 여러번 호출될 수 있으므로
+        self.call_count = 0
+
         # VMTranslator가 setFilename 호출해서 설정해줌
         self.curr_file = None
+
+    def init_sys(self):
+        # Init Sys
+        self.write('@256')
+        self.write('D=A')
+        self.write('@SP')
+        self.write('M=D')
+        self.writeCall('Sys.init', 0)
 
     def writeArithmetic(self, command) -> None:
         # 근데 이거 그냥 중복 감안하고 걍 문자열로 저장해도 될거 같은데, pushpop 부분도 그렇고
@@ -229,16 +244,16 @@ class CodeWriter:
         else:
             raise ValueError
 
-    def writeLabel(self, label):
+    def writeLabel(self, label: str):
         self.write(f'({self.curr_file}${label})')
 
-    def writeGoto(self, label):
+    def writeGoto(self, label: str):
         # @label, 0;JMP: goto @label
         self.write(f'@{self.curr_file}${label}')
         self.write('0;JMP')
 
-    def writeIf(self, label):
-        # @SP, M=M+1: sp -= 1
+    def writeIf(self, label: str):
+        # @SP, M=M-1: sp -= 1
         self.write('@SP')
         self.write('M=M-1')
 
@@ -250,14 +265,124 @@ class CodeWriter:
         self.write(f'@{self.curr_file}${label}')
         self.write('D;JNE')
 
-    def writeFunction(self, function_name, n_vars):
-        pass
+    def writeFunction(self, function_name: str, n_vars: int):  # TODO 일단 여긴 문제 없음
+        # ({function_name}): label function_name
+        self.write(f'({function_name})')
 
-    def writeCall(self, function_name, n_vars):
-        pass
+        for _ in range(n_vars):
+            # # @SP, A=M, M=0: *sp = 0
+            self.write('@SP')
+            self.write('A=M')
+            self.write('M=0')
+
+            # @SP, M=M+1: sp += 1
+            self.write('@SP')
+            self.write('M=M+1')
+
+    def writeCall(self, function_name: str, n_vars: int):
+        return_address = f'{function_name}$ret.{self.call_count}'
+        self.call_count += 1
+
+        # 동작: stack.append(return_address)
+        # @return_address D=A: D = return_address
+        self.write(f'@{return_address}')
+        self.write('D=A')
+        # @SP, A=M, M=D: *sp = D
+        self.write('@SP')
+        self.write('A=M')
+        self.write('M=D')
+        # @SP, M=M+1: sp += 1
+        self.write('@SP')
+        self.write('M=M+1')
+
+        for segment in ['LCL', 'ARG', 'THIS', 'THAT']:
+            # @{segment}, D=M: D = @{segment}
+            self.write(f'@{segment}')
+            self.write('D=M')
+
+            # @SP, A=M, M=D: *sp = D
+            self.write('@SP')
+            self.write('A=M')
+            self.write('M=D')
+
+            # @SP, M=M+1: sp += 1
+            self.write('@SP')
+            self.write('M=M+1')
+
+        # @SP, D=M, @LCL, M=D: LCL = sp
+        self.write('@SP')
+        self.write('D=M')
+        self.write('@LCL')
+        self.write('M=D')
+
+        # @SP, D=M, @{arg_offset}, D=D-A, M=D: ARG = SP-5-n_args
+        arg_offset = 5 + n_vars
+        # 위에서 SP를 D에 넣어둔 상태라 없어도 됨
+        # self.write('@SP')
+        # self.write('D=M')
+        self.write(f'@{arg_offset}')
+        self.write('D=D-A')
+        self.write('@ARG')
+        self.write('M=D')
+
+        # @{function_name}, 0;JMP: goto function_name
+        self.write(f'@{function_name}')
+        self.write('0;JMP')
+
+        # (return_address): label return_address - 함수가 끝나면 여기부터 코드가 이어 실행됨
+        self.write(f'({return_address})')
 
     def writeReturn(self):
-        pass
+        # @LCL, D=M, @R14, M=D: R14(frame) = LCL
+        self.write('@LCL')
+        self.write('D=M')
+        self.write('@R14')  # frame을 저장하는 임시 주소로 R14를 사용, R13~15는 VM 명세에서 사용되지 않는 값이라, VM 변환기가 마음대로 사용 가능
+        self.write('M=D')
+
+        # R15(ret_addr) = *(frame-5)
+        self.write('@R14')
+        self.write('D=M')
+        self.write('@5')
+        self.write('D=D-A')
+        self.write('A=D')
+        self.write('D=M')
+        self.write('@R15')
+        self.write('M=D')
+
+        # *arg = pop() - 첫번째 arg에 결과를 저장
+        # @SP, M=M-1: sp -= 1
+        self.write('@SP')
+        self.write('M=M-1')
+        # A=M, D=M: D = *sp
+        self.write('A=M')
+        self.write('D=M')
+        # @ARG, A=M, M=D: *arg = D
+        self.write('@ARG')
+        self.write('A=M')
+        self.write('M=D')
+
+        # @ARG, D=M, @SP, M=D+1: sp = D+1(arg+1) - 첫번째 arg의 다음으로 스택의 위치를 재설정.
+        self.write('@ARG')
+        self.write('D=M')
+        self.write('@SP')
+        self.write('M=D+1')
+
+        for idx, segment in enumerate(['THAT', 'THIS', 'ARG', 'LCL']):
+            # {segment} = *(frame-idx+1)
+            self.write('@R14')
+            self.write('D=M')
+            self.write(f'@{idx + 1}')
+            self.write('D=D-A')
+            self.write('A=D')
+            self.write('D=M')
+            self.write(f'@{segment}')
+            self.write('M=D')
+
+        # goto R15(ret_addr)
+        self.write('@R15')
+        self.write('A=M')
+        self.write('0;JMP')
+
 
     def setFileName(self, filename):
         self.curr_file = filename
@@ -317,6 +442,9 @@ class VMTranslator:
         self.codeWriter = CodeWriter(os.path.join(file_location, file_name + ".asm"))
         self.parser = None
 
+        if self.is_dir:
+            self.codeWriter.init_sys()
+
     def run(self) -> None:
         if self.is_dir:
             self.translate_directory()
@@ -340,9 +468,9 @@ class VMTranslator:
             elif cmd_type == 'C_IF':
                 self.codeWriter.writeIf(self.parser.arg1())
             elif cmd_type == 'C_FUNCTION':
-                self.codeWriter.writeFunction(self.parser.arg1(), self.parser.arg2())
+                self.codeWriter.writeFunction(self.parser.arg1(), int(self.parser.arg2()))
             elif cmd_type == 'C_CALL':
-                self.codeWriter.writeCall(self.parser.arg1(), self.parser.arg2())
+                self.codeWriter.writeCall(self.parser.arg1(), int(self.parser.arg2()))
             elif cmd_type == 'C_RETURN':
                 self.codeWriter.writeReturn()
             else:
