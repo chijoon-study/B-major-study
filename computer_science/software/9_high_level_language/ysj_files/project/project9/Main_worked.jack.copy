@@ -1,0 +1,151 @@
+class Main {
+    static int computerChoice;
+    static Array gameResult;
+
+    function void main() {
+        var char userInput;
+        var char randInput;
+        var int isQuit;
+        var int gameEnd; // 게임 끝나고 상호작용 대기
+        var int beforeInput;
+        let gameResult = Array.new(3); // 결과 혹은 에러코드, 컴퓨터 선택, 사용자 선택
+        let computerChoice = 4;
+        let isQuit = 0;
+        let beforeInput = 100;
+
+        while (isQuit < 1) {
+            if (beforeInput = 100) {
+                // 재시작 or 처음 시작
+                do Output.moveCursor(0, 0);
+                do Main.resetGame();
+                do Main.print("Input Any Char. It Use For Random Seed: ");
+                let randInput = Keyboard.readChar();
+                do Output.println();
+            }
+            let beforeInput = 0;
+            
+            do Main.print("Input Your Choice: ");
+            let userInput = Keyboard.readChar();
+            do Output.println();
+            let gameResult = Main.playGame(randInput, userInput);
+
+            if (gameResult[0] = -999) {
+                // 게임 종료
+                do Main.println("End Game.");
+                let isQuit = 1;
+            }
+            if (gameResult[0] = -888) {
+                // 재시작
+                let beforeInput = 100;
+            }
+            if (gameResult[0] = -777) {
+                // 잘못된 입력
+                do Main.println("Wrong Input Try Agang");
+            }
+            if ((gameResult[0] = -1) | (gameResult[0] = 0) | (gameResult[0] = 1)) {
+                // -1, 0, 1 이면
+                do Main.print("You: ");
+                do Main.printChoiceToStr(gameResult[2]); // 사용자 선택값 출력
+                do Main.print(", AI: ");
+                do Main.printChoiceToStr(gameResult[1]); // 컴퓨터 선택값 출력
+                do Output.println();
+                if (gameResult[0] = 0) {
+                    do Main.println("you draw.");
+                }
+                if (gameResult[0] = 1) {
+                    do Main.println("you win!");
+                }
+                if (gameResult[0] = -1) {
+                    do Main.println("you lose.");
+                }
+            }
+
+            while(gameEnd < 1) {
+                do Output.printString("Quit or Restart: ");
+                let userInput = Keyboard.readChar();
+
+                if ((userInput = 81) | (userInput = 113)) {
+                    let isQuit = 1;
+                    let gameEnd = 1;
+                }
+                if ((userInput = 82) | (userInput = 114)) {
+                    let beforeInput = 100;
+                    let gameEnd = 1;
+                }
+                if (~((userInput = 82) | (userInput = 114) | (userInput = 81) | (userInput = 113))) {
+                    do Main.println("Wrong Input Try Agang");
+                }
+                
+            }
+        }
+        return;
+    }
+
+    function void resetGame() {
+        // gameResult 값 초기화
+        let gameResult[0] = -100;
+        let gameResult[1] = -100;
+        let gameResult[2] = -100;
+        do Screen.clearScreen();
+        do Main.println("Start.");
+        do Main.println("Input: 1=Scissors, 2=Rock, 3=Paper, R/r: Restart, Q/q: Quit");
+        return;
+    }
+
+    function Array playGame(int randInput, int userInput) {
+        var int userChoice;
+        if ((userInput = 81) | (userInput = 113)) {
+            // Q or q
+            let gameResult[0] = -999;
+            return gameResult;
+        }
+        if ((userInput = 82) | (userInput = 114)) {
+            // R or r
+            let gameResult[0] = -888;
+            return gameResult;
+        }
+        if (~(userInput = 49) & ~(userInput = 50) & ~(userInput = 51)) {
+            // 1 or 2 or 3
+            let gameResult[0] = -777;
+            return gameResult;
+        }
+        // 예측하기 어려운 결과를 위해 기존 값도 더함
+        let computerChoice = ((computerChoice+randInput) - (((computerChoice+randInput) / 3) * 3))+ 1;
+        let gameResult[1] = computerChoice;
+        let userChoice = (userInput - 48);
+        let gameResult[2] = userChoice;
+        // else if 하려면 else 코드블록 안에서 계속 중첩되는 형태라 이런 식으로 구현함
+        let gameResult[0] = -1; // 컴퓨터 승, 기본값
+        if (userChoice = computerChoice) {
+            let gameResult[0] = 0; // 무승부
+        }
+        if ((userChoice = 1 & computerChoice = 3) | (userChoice = 2 & computerChoice = 1) | (userChoice = 3 & computerChoice = 2)) {
+            let gameResult[0] = 1; // 사용자 승
+        }
+        return gameResult;
+    }
+
+    function void printChoiceToStr(int i) {
+        if (i = 1) {
+            do Output.printString("Scissors");
+        }
+        if (i = 2) {
+            do Output.printString("Rock");
+        }
+        if (i = 3) {
+            do Output.printString("Paper");
+        }
+        return;
+    }
+
+    function void print(String msg) {
+        do Output.printString(msg);
+        return;
+    }
+
+        function void println(String msg) {
+        do Output.printString(msg);
+        do Output.println();
+        return;
+    }
+}

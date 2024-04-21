@@ -1,0 +1,63 @@
+class Main {
+
+    static Game game;
+
+    function void main() {
+        var Game game;
+        var char userInput;
+        var char randInput;
+        var int isQuit;
+        var int beforeInput;
+        var Array gameResult;
+
+        let game = Game.new();
+        let isQuit = 0;
+        let beforeInput = 100;
+
+        while (isQuit < 1) {
+            if (beforeInput = 100) { // 재시작 or 처음 시작
+                do game.resetGame();
+                do Output.printString("Input.: ");
+                let randInput = Keyboard.readChar();
+            }
+
+            do Output.printString("Choice: ");
+            let userInput = Keyboard.readChar();
+
+            let gameResult = game.playGame(randInput, userInput);
+        
+            if (gameResult[0] = -999) { 
+                // 게임 종료
+                do Output.printString("\n End Game.\n");
+                let isQuit = 1;
+            } 
+            if (gameResult[0] = -888) { 
+                // 재시작
+                let beforeInput = 100;
+            } 
+            if (gameResult[0] = -777) { 
+                // 잘못된 입력
+                do Output.printString("\n Wrong Try Agang \n");
+            } 
+            if ((gameResult[0] = -1) | (gameResult[0] = 0) | (gameResult[0] = 1)) {
+                // -1, 0, 1 이면
+                do Output.printString("\n You: ");
+                do Output.printInt(userInput); // 사용자 선택값 출력
+                do Output.printString(", AI: ");
+                do Output.printInt(gameResult[1]); // 컴퓨터 선택값 출력
+                do Output.printString("\n");
+
+                if (gameResult[0] = 0) {
+                    do Output.printString("soso.\n");
+                } 
+                if (gameResult[0] = 1) {
+                    do Output.printString("you win!\n");
+                } 
+                if (gameResult[0] = 1) {
+                    do Output.printString("you lose!\n");
+                }
+            }
+        }
+        return;
+    }
+}
