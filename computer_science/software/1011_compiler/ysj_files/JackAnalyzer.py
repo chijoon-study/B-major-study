@@ -96,7 +96,8 @@ class JackTokenizer:
     def get_tokens(self, text) -> list:
         """입력받은 텍스트의 token 목록을 반환함"""
         matches = []
-        for name, pattern in self.patterns.items():
+        for name in ['KEYWORD', 'SYMBOL', 'INT_CONST', 'STRING_CONST', 'IDENTIFIER']:
+            pattern = self.patterns[name]
             for match in re.finditer(pattern, text):
                 matches.append((match.start(), (name, match.group())))
         heapq.heapify(matches)
@@ -105,7 +106,7 @@ class JackTokenizer:
     def get_val(self, token_type: str, value: str):
         """type에 맞는 값 설정"""
         if token_type == 'KEYWORD':
-            return self.__keyword[value]
+            return value
         if token_type == 'SYMBOL':
             return value
         if token_type == 'IDENTIFIER':
