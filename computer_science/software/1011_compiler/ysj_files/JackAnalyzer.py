@@ -101,73 +101,468 @@ class JackTokenizer:
 
 
 class CompilationEngine:
-    def __init__(self, path, jack_tokenizer: JackTokenizer):
+    def __init__(self, path, jacktokenizer: JackTokenizer):
         self.file = open(path, 'w')
-        self.tokenizer = jack_tokenizer
+        self.tokenizer = jacktokenizer
+        self.indent_level = 0
 
     def compile_class(self):
-        pass
+        if self.tokenizer.hasMoreTokens():
+            self.tokenizer.advance()
+            self.write("<class>\n")
+            self.indent_level += 1
+
+            self.write_keyword()  # class
+
+            self.tokenizer.advance()
+            self.write_identifier()  # identifier - class name
+
+            self.tokenizer.advance()
+            self.write_symbol()  # {
+
+            self.tokenizer.advance()
+            while self.tokenizer.keyWord() == "static" or \
+                    self.tokenizer.keyWord() == "field":
+                self.compile_class_var_dec()
+            while self.tokenizer.keyWord() == "constructor" or \
+                    self.tokenizer.keyWord() == "function" \
+                    or self.tokenizer.keyWord() == "method":
+                self.compile_subroutine()
+
+            self.write_symbol()  # }
+
+            self.indent_level -= 1
+            self.write("</class>\n")
 
     def compile_class_var_dec(self):
-        pass
+        self.write(f'<classVarDec>\n')
+        self.indent_level += 1
+        self.write_keyword()  # static, field
+
+        self.tokenizer.advance()
+        self.compile_type_and_varName()
+
+        self.indent_level -= 1
+        self.write(f'</classVarDec>\n')
 
     def compile_subroutine(self):
-        pass
+        self.write(f'<subroutineDec>\n')
+        self.indent_level += 1
+        self.write_keyword()  # constructor, method, function
+
+        self.tokenizer.advance()
+        if self.tokenizer.tokenType() == self.tokenizer.KEYWORD:
+            self.write_keyword()  # void
+        elif self.tokenizer.tokenType() == self.tokenizer.IDENTIFIER:
+            self.write_identifier()  # identifier - return type
+
+        self.tokenizer.advance()
+        self.write_identifier()  # identifier - name
+
+        self.tokenizer.advance()
+        self.write_symbol()  # (
+
+        self.tokenizer.advance()
+        self.compile_parameter_list()  # 파라미터
+
+        self.write_symbol()  # )
+
+        self.tokenizer.advance()
+        self.write(f'<subroutineBody>\n')
+        self.indent_level += 1
+        self.write_symbol()  # {
+
+        self.tokenizer.advance()
+        while self.tokenizer.keyWord() == "var":
+            self.compile_var_dec()  # var 처리
+
+        self.compile_statements()  # statements
+
+        self.write_symbol()  # }
+        self.indent_level -= 1
+        self.write(f'</subroutineBody>\n')
+        self.indent_level -= 1
+        self.write(f'</subroutineDec>\n')
+        self.tokenizer.advance()
 
     def compile_parameter_list(self):
-        pass
+        self.write(f'<parameterList>\n')
+        self.indent_level += 1
+
+        while self.tokenizer.tokenType() != self.tokenizer.SYMBOL:  # 현재 토큰이 SYMBOL 라는건 토큰이 ) 되었다는 의미
+            if self.tokenizer.tokenType() == self.tokenizer.KEYWORD:
+                self.write_keyword()  # type
+            elif self.tokenizer.tokenType() == self.tokenizer.IDENTIFIER:
+                self.write_identifier()  # identifier
+
+            self.tokenizer.advance()
+            self.write_identifier()  # identifier
+            self.tokenizer.advance()
+
+            if self.tokenizer.symbol() == ",":
+                self.write_symbol()  # ,
+                self.tokenizer.advance()
+
+        self.indent_level -= 1
+        self.write(f'</parameterList>\n')
 
     def compile_var_dec(self):
-        pass
+        self.write(f'<varDec>\n')
+        self.indent_level += 1
+
+        self.write_keyword()  # var
+        self.tokenizer.advance()
+        self.compile_type_and_varName()  # type varName
+
+        self.indent_level -= 1
+        self.write(f'</varDec>\n')
 
     def compile_statements(self):
-        pass
+        self.write(f'<statements>\n')
+        self.indent_level += 1
+
+        while self.tokenizer.tokenType() == self.tokenizer.KEYWORD:
+            if self.tokenizer.keyWord() == "let":
+                self.compile_let()
+            elif self.tokenizer.keyWord() == "if":
+                self.compile_if()
+            elif self.tokenizer.keyWord() == "while":
+                self.compile_while()
+            elif self.tokenizer.keyWord() == "do":
+                self.compile_do()
+            elif self.tokenizer.keyWord() == "return":
+                self.compile_return()
+
+        self.indent_level -= 1
+        self.write(f'</statements>\n')
 
     def compile_do(self):
-        pass
+        self.write(f'<doStatement>\n')
+        self.indent_level += 1
+        self.write_keyword()  # do
+
+        self.tokenizer.advance()
+        self.write_identifier()  # identifier - method(this 생략 시) or class/instance name(클래스/인스턴스 호출 시)
+
+        self.tokenizer.advance()
+        if self.tokenizer.symbol() == ".":  # 클래스/인스턴스 호출 시
+            self.write_symbol()  # .
+            self.tokenizer.advance()
+            self.write_identifier()  # identifier - function or method name
+            self.tokenizer.advance()
+
+        self.write_symbol()  # (
+
+        self.tokenizer.advance()
+        self.compile_expression_list()
+
+        self.write_symbol()  # )
+
+        self.tokenizer.advance()
+        self.write_symbol()  # ;
+
+        self.indent_level -= 1
+        self.write(f'</doStatement>\n')
+        self.tokenizer.advance()
 
     def compile_let(self):
-        pass
+        self.write(f'<letStatement>\n')
+        self.indent_level += 1
+        self.write_keyword()  # let
+
+        self.tokenizer.advance()
+        self.write_identifier()  # identifier
+
+        self.tokenizer.advance()
+        if self.tokenizer.symbol() == "[":
+            self.write_symbol()  # [
+            self.tokenizer.advance()
+            self.compile_expression()  # expression
+            self.write_symbol()  # ]
+            self.tokenizer.advance()
+
+        self.write_symbol()  # =
+
+        self.tokenizer.advance()
+        self.compile_expression()  # expression
+
+        self.write_symbol()  # ;
+
+        self.indent_level -= 1
+        self.write(f'</letStatement>\n')
+        self.tokenizer.advance()
 
     def compile_while(self):
-        pass
+        self.write(f'<whileStatement>\n')
+        self.indent_level += 1
+        self.write_keyword()  # while
+
+        self.tokenizer.advance()
+        self.write_symbol()  # (
+
+        self.tokenizer.advance()
+        self.compile_expression()  # expression
+
+        self.write_symbol()  # )
+
+        self.tokenizer.advance()
+        self.write_symbol()  # {
+
+        self.tokenizer.advance()
+        self.compile_statements()  # statements
+
+        self.write_symbol()  # }
+
+        self.indent_level -= 1
+        self.write(f'</whileStatement>\n')
+        self.tokenizer.advance()
 
     def compile_return(self):
-        pass
+        self.write(f'<returnStatement>\n')
+        self.indent_level += 1
+        self.write_keyword()  # return
+
+        self.tokenizer.advance()
+        if self.tokenizer.tokenType() != self.tokenizer.SYMBOL and \
+                self.tokenizer.symbol() != ";":  # if not return void
+            self.compile_expression()  # expression
+
+        self.write_symbol()  # ;
+
+        self.indent_level -= 1
+        self.write(f'</returnStatement>\n')
+        self.tokenizer.advance()
 
     def compile_if(self):
-        pass
+        self.write(f'<ifStatement>\n')
+        self.indent_level += 1
+        self.write_keyword()  # if
+
+        self.tokenizer.advance()
+        self.write_symbol()  # (
+
+        self.tokenizer.advance()
+        self.compile_expression()  # expression
+
+        self.write_symbol()  # )
+
+        self.tokenizer.advance()
+        self.write_symbol()  # {
+
+        self.tokenizer.advance()
+        self.compile_statements()  # statements
+
+        self.write_symbol()  # }
+
+        self.tokenizer.advance()
+        if self.tokenizer.tokenType() == self.tokenizer.KEYWORD and \
+                self.tokenizer.keyWord() == "else":
+            self.write_keyword()  # else
+
+            self.tokenizer.advance()
+            self.write_symbol()  # (
+
+            self.tokenizer.advance()
+            self.compile_statements()  # {
+
+            self.write_symbol()
+            self.tokenizer.advance()  # }
+
+        self.indent_level -= 1
+        self.write(f'</ifStatement>\n')
 
     def compile_expression(self):
-        pass
+        # term (op term)*
+
+        self.write(f'<expression>\n')
+        self.indent_level += 1
+
+        self.compile_term()
+        # op라면 연산이 이어지는 경우이므로 (op term) 반복, 이 과정에서 다음 값까지 미리 읽은 상태가 됨
+        while self.tokenizer.tokenType() == self.tokenizer.SYMBOL and \
+                self.tokenizer.symbol() in ['+', '-', '*', '/', '&', '|', '<', '>', '=']:
+            self.write_symbol()
+            self.tokenizer.advance()
+            self.compile_term()
+
+        self.indent_level -= 1
+        self.write(f'</expression>\n')
+
+    # 뭔가 잘 동작하지 않는데, 원인을 모르겠음...
+    # def compile_term(self):
+    #     # 이거 뭔 용도지, 그 하위 term 관련한 처리 같은데, 이해를 잘 못하겠음
+    #     sanity_check = True
+    #
+    #     self.write(f'<term>\n')
+    #     self.indent_level += 1
+    #
+    #     token_type = self.tokenizer.tokenType()
+    #     if token_type == JackTokenizer.IDENTIFIER:
+    #         sanity_check = False
+    #         self.write_identifier()
+    #
+    #         self.tokenizer.advance()
+    #
+    #         symbol = self.tokenizer.symbol()
+    #         if symbol in '.[(':
+    #             sanity_check = True
+    #
+    #             self.write_symbol()
+    #             self.tokenizer.advance()
+    #             if symbol == '.':  # 서브루틴 호출 시
+    #                 self.write_identifier()  # 서브루틴 식별자
+    #                 self.tokenizer.advance()
+    #                 self.write_symbol()  # (
+    #                 self.tokenizer.advance()  # 여기 다음은 symbol == '(' 와 동일.
+    #                 self.compile_expression_list()
+    #                 self.write_symbol()
+    #             elif symbol == '[':  # 배열 원소
+    #                 self.compile_expression()
+    #                 self.write_symbol()
+    #             elif symbol == '(':  # 메서드 호출 - m() 같은 경우 - 내부적으론 this.m()로 판단
+    #                 self.compile_expression_list()
+    #                 self.write_symbol()
+    #     elif token_type == JackTokenizer.STRING_CONST:
+    #         self.write_str_const()
+    #     elif token_type == JackTokenizer.INT_CONST:
+    #         self.write_int_const()
+    #     elif token_type == JackTokenizer.KEYWORD:
+    #         self.write_keyword()
+    #     elif token_type == JackTokenizer.SYMBOL:
+    #         if self.tokenizer.symbol() == '(':
+    #             self.write_symbol()  # (
+    #             self.tokenizer.advance()
+    #             self.compile_expression()  # expression
+    #             self.write_symbol()  # )
+    #         elif self.tokenizer.symbol() == '~' or self.tokenizer.symbol() == '-':
+    #             self.write_symbol()
+    #             self.tokenizer.advance()
+    #             self.compile_term()
+    #
+    #     if sanity_check:
+    #         self.tokenizer.advance()
+    #
+    #     self.indent_level -= 1
+    #     self.write(f'</term>\n')
 
     def compile_term(self):
-        self.tokenizer.advance()
-        token_type = self.tokenizer.tokenType()
-        if token_type == JackTokenizer.IDENTIFIER:
-            token_value = self.tokenizer.identifier()
-            self.write(f'<identifier> {token_value} </identifier>\n')
-            if self.tokenizer.hasMoreTokens():  # 만약 하위 term이 있다면 재귀적으로 호출
-                self.compile_term()
-        elif token_type == JackTokenizer.STRING_CONST:
-            token_value = self.tokenizer.stringVal()
-            self.write(f'<stringConstant> {token_value} </stringConstant>\n')
-        elif token_type == JackTokenizer.INT_CONST:
-            token_value = self.tokenizer.intVal()
-            self.write(f'<integerConstant> {token_value} </integerConstant>\n')
-        elif token_type == JackTokenizer.KEYWORD:
-            token_value = self.tokenizer.keyWord()
-            self.write(f'<keyword> {token_value} </keyword>\n')
-        elif token_type == JackTokenizer.SYMBOL:
-            token_value = self.tokenizer.symbol()
-            self.write(f'<symbol> {token_value} </symbol>\n')
+        # debugging - not finished!!
+        sanity_check = True
+        self.write(f'<term>\n')
+        self.indent_level += 1
+        if self.tokenizer.tokenType() == self.tokenizer.INT_CONST:
+            self.write_int_const()
+        elif self.tokenizer.tokenType() == self.tokenizer.STRING_CONST:
+            self.write_str_const()
+        elif self.tokenizer.tokenType() == self.tokenizer.KEYWORD:
+            self.write_keyword()
+        elif self.tokenizer.tokenType() == self.tokenizer.IDENTIFIER:
+            self.write_identifier()
 
-    # 10장에서는 사용 안함
+            self.tokenizer.advance()
+            sanity_check = False
+            if self.tokenizer.symbol() == "[":
+                sanity_check = True
+                self.write_symbol()
+                self.tokenizer.advance()
+                self.compile_expression()
+                self.write_symbol()
+            elif self.tokenizer.symbol() == ".":  ## subroutine case
+                sanity_check = True
+                self.write_symbol()
+                self.tokenizer.advance()
+                self.write_identifier()
+                self.tokenizer.advance()
+                self.write_symbol()
+                self.tokenizer.advance()
+                self.compile_expression_list()
+                self.write_symbol()
+            elif self.tokenizer.symbol() == "(":
+                sanity_check = True
+                self.write_symbol()
+                self.tokenizer.advance()
+                self.compile_expression_list()
+                self.write_symbol()
+
+        elif self.tokenizer.symbol() == "(":
+            self.write_symbol()
+            self.tokenizer.advance()
+            self.compile_expression()
+            self.write_symbol()
+        elif self.tokenizer.symbol() == "~" or self.tokenizer.symbol() == "-":
+            self.write_symbol()
+            self.tokenizer.advance()
+            self.compile_term()
+            sanity_check = False
+
+        if sanity_check:
+            self.tokenizer.advance()
+
+        self.indent_level -= 1
+        self.write(f'</term>\n')
+
     def compile_expression_list(self):
-        pass
+        self.write(f'<expressionList>\n')
+        self.indent_level += 1
+
+        is_empty_list = self.tokenizer.tokenType() == self.tokenizer.SYMBOL and \
+                        self.tokenizer.symbol() == ")"
+
+        if not is_empty_list:
+            self.compile_expression()
+            self.compile_remaining_expressions()
+
+        self.indent_level -= 1
+        self.write(f'</expressionList>\n')
+
+    # API 끝
 
     def write(self, text):
-        self.file.write(text)
+        self.file.write(f'{("  " * self.indent_level)}{text}')
+
+    def write_keyword(self):
+        self.write(f'<keyword> {self.tokenizer.keyWord()} </keyword>\n')
+
+    def write_symbol(self):
+        symbol = self.tokenizer.symbol()
+        if symbol == "<":
+            symbol = "&lt;"
+        elif symbol == ">":
+            symbol = "&gt;"
+        elif symbol == "&":
+            symbol = "&amp;"
+        self.write(f'<symbol> {symbol} </symbol>\n')
+
+    def write_int_const(self):
+        self.write(f'<integerConstant> {self.tokenizer.intVal()} </integerConstant>\n')
+
+    def write_str_const(self):
+        self.write(f'<stringConstant> {self.tokenizer.stringVal()} </stringConstant>\n')
+
+    def write_identifier(self):
+        self.write(f'<identifier> {self.tokenizer.identifier()} </identifier>\n')
+
+    def compile_type_and_varName(self):
+        if self.tokenizer.tokenType() == self.tokenizer.KEYWORD:
+            self.write_keyword()  # type
+        elif self.tokenizer.tokenType() == self.tokenizer.IDENTIFIER:
+            self.write_identifier()  # identifier - class type
+        self.tokenizer.advance()
+        self.write_identifier()  # varName
+        self.tokenizer.advance()
+        while self.tokenizer.symbol() == ",":
+            self.write_symbol()  # ,
+            self.tokenizer.advance()
+            self.write_identifier()  # another varName
+            self.tokenizer.advance()
+        self.write_symbol()  # ;
+        self.tokenizer.advance()
+
+    def compile_remaining_expressions(self):
+        while self.tokenizer.tokenType() == self.tokenizer.SYMBOL and self.tokenizer.symbol() == ",":
+            self.write_symbol()  # ,
+            self.tokenizer.advance()
+            self.compile_expression()  # expression
 
 
 class JackAnalyzer:
@@ -192,7 +587,7 @@ class JackAnalyzer:
 
     def analyze_file(self, file_path):
         self.jt = JackTokenizer(file_path + '.jack')
-        self.ce = CompilationEngine(file_path + "Test" + '.xml', self.jt)
+        self.ce = CompilationEngine(file_path + '.xml', self.jt)
         self.ce.compile_class()
 
 
