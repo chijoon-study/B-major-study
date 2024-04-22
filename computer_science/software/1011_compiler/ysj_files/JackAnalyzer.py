@@ -2,6 +2,7 @@ import glob
 import os
 import re
 import heapq
+import sys
 
 
 class JackTokenizer:
@@ -18,31 +19,30 @@ class JackTokenizer:
         다음 명령어가 있는지 확인하면서 다음 결과 바로 앞까지 이동.
         변경/조회 기능이 합쳐져있기는 한데, 멱등성이 보장되니까 괜찮을듯?
         '''
-        if not self.currentLineTokens:  # currentLineTokens이 남았으면 아직 토큰 있는거임
+        if len(self.currentLineTokens) >= 2:  # currentLineTokens이 남았으면 아직 토큰 있는거임
             return True
-        while True:
-            current_position = self.file.tell()
-            line = self.file.readline()
-            if line == '':  # 마지막 줄인가?
-                return False
-            if line.lstrip().startswith('//', '\n'):  # 한줄 주석 혹은 줄바꿈인가?
-                continue
-            if line.lstrip().startswith(('/*', '/**')):  # 여러줄 주석인가?
-                while True:  # 주석 끝날때까지 반복
-                    line = self.file.readline()  # 주석 다음줄로 넘기기
-                    # 여기에 line.lstrip().startswith('*')로 주석 규칙 잘 지키나 확인해야 하는거 아닌가?, 문법 상 잘못쓰는건 고려 안하니까 일단 생략
-                    if line.lstrip().startswith('*/'):  # 주석의 끝인가? 사실 이러면 무한루프 가능성 있는데, 마찬가지로 문법 잘 지키면 문제 없음
-                        break
-
-            # 주석도 아니고, 공백도 아니면 토큰이 있어야만 하므로 검사 없이 진행
-            self.file.seek(current_position)
-            return True
+        else:
+            while True:
+                current_position = self.file.tell()
+                line = self.file.readline()
+                if line == '':  # 마지막 줄인가?
+                    return False
+                line = line.strip()
+                if line.startswith('//'):  # 한줄 주석인가?
+                    continue
+                elif line == '':  # 줄바꿈인가?
+                    continue
+                elif line.startswith('/*') or line.startswith('/**') or line.startswith('*'):  # 여러줄 주석인가?
+                    continue
+                else:
+                    self.file.seek(current_position)
+                    return True
 
     def advance(self) -> None:
         """다음 토큰을 현재 토큰으로. has_more_tokens가 true일 때만 사용해야 함"""
-        if not self.currentLineTokens:  # self.currentLineTokens가 비면 새로운 값 가져오기
-            line = self.file.readline()
-            self.currentLineTokens = self.get_tokens(line)
+        if len(self.currentLineTokens) < 2:  # self.currentLineTokens가 비면 새로운 값 가져오기
+            line = self.file.readline().strip()
+            self.currentLineTokens.extend(self.get_tokens(line))
         else:  # 남아있으면 기존 self.currentLineTokens에서 기존 값 빼고 다음 값 사용하기
             heapq.heappop(self.currentLineTokens)
         cur_token = self.currentLineTokens[0][1]
@@ -75,23 +75,37 @@ class JackTokenizer:
 
     # 여기까지 API
 
+    def has_term_child(self) -> bool:
+        """해당 term(토큰)이 햐위 term을 가지는지 확인함. 예를 들어. arr[i]는 arr는 하위 i를 가짐"""
+        # term의 하위 term을 적을 때, 줄바꿈이 발생하지 않으므로 self.currentLineTokens을 확인해서 값을 구할 수 있음.
+        # 예를 들어, arr[i]를 표현할 때, 다음처럼 표현하지는 않는다.
+        # arr
+        # [i];
+        if len(self.currentLineTokens) < 2:
+            return False
+        next_token = heapq.nsmallest(2, self.currentLineTokens)[1][1]  # 값 작은 순으로 2개 뽑아서 2번째 가지기 (= 현재 다음 토큰 가져요기)
+        if next_token[1] in "[(.":  # [ ( . 중 하나면 하위 term이 있다는 소리
+            return True
+        else:
+            return False
+
     def close(self, path):
         """self.file을 포함한 자원 해제"""
         pass
 
     def get_tokens(self, text) -> list:
         """입력받은 텍스트의 token 목록을 반환함"""
-        matches = {}
+        matches = []
         for name, pattern in self.patterns.items():
             for match in re.finditer(pattern, text):
-                matches[match.start()] = (name, match.group())
+                matches.append((match.start(), (name, match.group())))
         heapq.heapify(matches)
         return matches
 
     def get_val(self, token_type: str, value: str):
         """type에 맞는 값 설정"""
         if token_type == 'KEYWORD':
-            return self.keyword[value]
+            return self.__keyword[value]
         if token_type == 'SYMBOL':
             return value
         if token_type == 'IDENTIFIER':
@@ -119,7 +133,7 @@ class JackTokenizer:
         'IDENTIFIER': r'(?P<identifier>[A-Za-z_]\w*)'
     }
 
-    keyword = {
+    __keyword = {
         'class': 'CLASS',
         'constructor': 'CONSTRUCTOR',
         'function': 'FUNCTION',
@@ -187,8 +201,27 @@ class CompilationEngine:
         pass
 
     def compile_term(self):
-        pass
+        self.tokenizer.advance()
+        token_type = self.tokenizer.token_type()
+        if token_type == 'IDENTIFIER':
+            token_value = self.tokenizer.identifier()
+            self.write(f'<identifier> {token_value} </identifier>\n')
+            if self.tokenizer.has_term_child():  # 만약 하위 term이 있다면 재귀적으로 호출
+                self.compile_term()
+        elif token_type == 'STRING_CONST':
+            token_value = self.tokenizer.stringVal()
+            self.write(f'<stringConstant> {token_value} </stringConstant>\n')
+        elif token_type == 'INT_CONST':
+            token_value = self.tokenizer.intVal()
+            self.write(f'<integerConstant> {token_value} </integerConstant>\n')
+        elif token_type == 'KEYWORD':
+            token_value = self.tokenizer.keyword()
+            self.write(f'<keyword> {token_value} </keyword>\n')
+        elif token_type == 'SYMBOL':
+            token_value = self.tokenizer.symbol()
+            self.write(f'<symbol> {token_value} </symbol>\n')
 
+    # 10장에서는 사용 안함
     def compile_expression_list(self):
         pass
 
@@ -204,24 +237,23 @@ class JackAnalyzer:
 
     def run(self):
         if os.path.isdir(self.path):
-            dir_path = os.path.basename(os.path.normpath(self.path))
-            self.analyze_dir(dir_path)
+            #            dir_path = os.path.basename(os.path.normpath(self.path))
+            self.analyze_dir()
         else:
-            file_path = self.path[:-4]
+            file_path = self.path[:-5]
             self.analyze_file(file_path)
 
-    def analyze_dir(self, dir_path):
-        jack_files = glob.glob(os.path.join(dir_path, '*.jack'))
+    def analyze_dir(self):
+        jack_files = glob.glob(os.path.join(self.path, '*.jack'))
         for jack_file in jack_files:
-            file_path = jack_file[:-4]
+            file_path = jack_file[:-5]
             self.analyze_file(file_path)
 
     def analyze_file(self, file_path):
         self.jt = JackTokenizer(file_path + '.jack')
-        self.ce = CompilationEngine(file_path + '.xml', self.jt)
+        self.ce = CompilationEngine(file_path + "Test" + '.xml', self.jt)
+        while self.jt.has_more_tokens():
+            self.ce.compile_term()
 
-# # 찾은 결과 출력
-# for pos in sorted(matches.items()):
-#     start = pos[0]
-#     name, value = pos[1]
-#     print(f"Found {name} At {start}: {value}")
+
+JackAnalyzer(sys.argv).run()
