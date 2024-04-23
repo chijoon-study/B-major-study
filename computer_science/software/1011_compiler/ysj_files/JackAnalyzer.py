@@ -171,6 +171,7 @@ class JackTokenizer:
                                 self.text = re.sub(IDENTIFIER_PATTERN, "", self.text)
                                 self._tokenType = JackTokenizer.IDENTIFIER
                                 self._currentToken = current_match.group(1)
+        print(self._currentToken)
 
     def tokenType(self):
         return self._tokenType
@@ -200,6 +201,7 @@ class CompilationEngine:
         self.vm_writer = VMWriter(vm_path)
         self.class_name = None
         self.expression_op_stack = []
+        self.label_count = 0
 
     def compile_class(self):
         if self.tokenizer.hasMoreTokens():
@@ -328,6 +330,7 @@ class CompilationEngine:
                 self.compile_do()
             elif self.tokenizer.keyWord() == "return":
                 self.compile_return()
+                print("______return__________________")
 
         # self.indent_level -= 1
         # self.write(f'</statements>\n')
@@ -362,59 +365,89 @@ class CompilationEngine:
         self.tokenizer.advance()
 
     def compile_let(self):
-        self.write(f'<letStatement>\n')
-        self.indent_level += 1
-        self.write_keyword()  # let
+        # self.write(f'<letStatement>\n')
+        # self.indent_level += 1
+        # self.write_keyword()  # let
 
         self.tokenizer.advance()
-        self.write_identifier()  # identifier
+        # self.write_identifier()  # identifier - varName
+        var_name = self.tokenizer.identifier()
 
-        self.tokenizer.advance()
+        self.tokenizer.advance()  # [ or =
         if self.tokenizer.symbol() == "[":
-            self.write_symbol()  # [
-            self.tokenizer.advance()
-            self.compile_expression()  # expression
-            self.write_symbol()  # ]
-            self.tokenizer.advance()
+            # self.write_symbol()  # [
+            self.tokenizer.advance()  # expression - index
+            self.compile_expression()
+            # self.write_symbol()  # ]
+            self.tokenizer.advance()  # ]
+            self.tokenizer.advance()  # =
 
-        self.write_symbol()  # =
+            # TODO 아래부턴 코드 복붙인데, 잘 모르겠네, 배열에 추가하는거라 객체 처럼 base에 접근해서 뭔가 하도록 하는거 같음
+            kind = self.symbol_table.kind_of(var_name)
+            index = self.symbol_table.index_of(var_name)
+            # segment = self.vm_writer.kind_to_segment[kind]
+            self.vm_writer.write_push(kind, index)
+            self.vm_writer.write_arithmetic('add')
+
+            self.compile_expression()  # Expression to assign
+            self.vm_writer.write_pop('temp', 0)  # Store assigned value in temp
+            self.vm_writer.write_pop('pointer', 1)  # Restore destination
+            self.vm_writer.write_push('temp', 0)  # Restore assigned value
+            self.vm_writer.write_pop('that', 0)
+        else:
+            # self.write_symbol()  # =
+
+            self.tokenizer.advance()  # expression
+            self.compile_expression()
+
+            kind = self.symbol_table.kind_of(var_name)
+            index = self.symbol_table.index_of(var_name)
+            # segment = self.vm_writer.kind_to_segment[kind]
+            self.vm_writer.write_pop(kind, index)
+
+        # self.write_symbol()  # ;
+
+        # self.indent_level -= 1
+        # self.write(f'</letStatement>\n')
+        self.tokenizer.advance()
+
+    def compile_while(self):  # if와 비슷하게 처리
+        # self.write(f'<whileStatement>\n')
+        # self.indent_level += 1
+        # self.write_keyword()  # while
+
+        while_label = self.get_new_label()
+        false_label = self.get_new_label()
+
+        self.tokenizer.advance()
+        # self.write_symbol()  # (
+
+        self.vm_writer.write_label(while_label)  # while 조건을 위에 위치해서 매번 while 조건을 다시 확인
 
         self.tokenizer.advance()
         self.compile_expression()  # expression
 
-        self.write_symbol()  # ;
+        # self.write_symbol()  # )
 
-        self.indent_level -= 1
-        self.write(f'</letStatement>\n')
-        self.tokenizer.advance()
-
-    def compile_while(self):
-        self.write(f'<whileStatement>\n')
-        self.indent_level += 1
-        self.write_keyword()  # while
+        self.vm_writer.write_if(false_label)  # 만약 결과가 false면 false_label로 이동
 
         self.tokenizer.advance()
-        self.write_symbol()  # (
-
-        self.tokenizer.advance()
-        self.compile_expression()  # expression
-
-        self.write_symbol()  # )
-
-        self.tokenizer.advance()
-        self.write_symbol()  # {
+        # self.write_symbol()  # {
 
         self.tokenizer.advance()
         self.compile_statements()  # statements
 
-        self.write_symbol()  # }
+        self.vm_writer.write_goto(while_label)  # (loop를 위해서 다시 while label로 이동 -> 다시 검사 및 goto여부 확인) 반복
+        self.vm_writer.write_label(false_label)
 
-        self.indent_level -= 1
-        self.write(f'</whileStatement>\n')
-        self.tokenizer.advance()
+        # self.write_symbol()  # }
+
+        # self.indent_level -= 1
+        # self.write(f'</whileStatement>\n')
+        # self.tokenizer.advance()
 
     def compile_return(self):
-        # cur token is return, advance by outer
+        # cur token is return, advance by outer # TODO 이거 맞나?
 
         self.tokenizer.advance()
         if self.tokenizer.tokenType() != self.tokenizer.SYMBOL and \
@@ -428,42 +461,54 @@ class CompilationEngine:
         self.tokenizer.advance()
 
     def compile_if(self):
-        self.write(f'<ifStatement>\n')
-        self.indent_level += 1
-        self.write_keyword()  # if
+        # self.write(f'<ifStatement>\n')
+        # self.indent_level += 1
+        # self.write_keyword()  # if
+
+        false_label = self.get_new_label()
+        end_label = self.get_new_label()
 
         self.tokenizer.advance()
-        self.write_symbol()  # (
+        # self.write_symbol()  # (
 
         self.tokenizer.advance()
         self.compile_expression()  # expression
 
-        self.write_symbol()  # )
+        # self.write_symbol()  # )
 
         self.tokenizer.advance()
-        self.write_symbol()  # {
+        # self.write_symbol()  # {
 
         self.tokenizer.advance()
+
+        self.vm_writer.write_if(false_label)  # 조건을 만족하지 않으면 false label로 이동
+
         self.compile_statements()  # statements
 
-        self.write_symbol()  # }
+        # self.write_symbol()  # }
 
-        self.tokenizer.advance()
+        self.tokenizer.advance()  # if() {} (여기 해당됨, else거나 아무 다음 토큰)
+
+        self.vm_writer.write_goto(end_label)  # 조건을 만족하면(true면) 실행되는 곳으로, false 부분을 생략하고 end label로 이동
+        self.vm_writer.write_label(false_label)
+
         if self.tokenizer.tokenType() == self.tokenizer.KEYWORD and \
                 self.tokenizer.keyWord() == "else":
-            self.write_keyword()  # else
+            # self.write_keyword()  # else
 
             self.tokenizer.advance()
-            self.write_symbol()  # (
+            # self.write_symbol()  # {
 
             self.tokenizer.advance()
-            self.compile_statements()  # {
+            self.compile_statements()
 
-            self.write_symbol()
-            self.tokenizer.advance()  # }
+            # self.write_symbol() # }
+            self.vm_writer.write_label(end_label)
 
-        self.indent_level -= 1
-        self.write(f'</ifStatement>\n')
+            self.tokenizer.advance()
+
+        # self.indent_level -= 1
+        # self.write(f'</ifStatement>\n')
 
     def compile_expression(self):
         self.compile_term()
@@ -520,8 +565,8 @@ class CompilationEngine:
 
                 kind = self.symbol_table.kind_of(outer_identifier)
                 index = self.symbol_table.index_of(outer_identifier)
-                segment = self.kind_to_segment[kind]
-                self.vm_writer.write_push(segment, index)  # TODO 이 부분 이해가 잘 안감
+                # segment = self.kind_to_segment[kind] #TODO 여기 관련된 부분 kind 이거 관련한 부분 나중에 지우기
+                self.vm_writer.write_push(kind, index)  # TODO 이 부분 이해가 잘 안감
 
                 self.vm_writer.write('add')
 
@@ -581,68 +626,65 @@ class CompilationEngine:
 
         return cnt
 
+    # API 끝
 
-# API 끝
+    def write(self, text):
+        self.file.write(f'{("  " * self.indent_level)}{text}')
 
-def write(self, text):
-    self.file.write(f'{("  " * self.indent_level)}{text}')
+    def write_keyword(self):
+        self.write(f'<keyword> {self.tokenizer.keyWord()} </keyword>\n')
 
+    def write_symbol(self):
+        symbol = self.tokenizer.symbol()
+        if symbol == "<":
+            symbol = "&lt;"
+        elif symbol == ">":
+            symbol = "&gt;"
+        elif symbol == "&":
+            symbol = "&amp;"
+        self.write(f'<symbol> {symbol} </symbol>\n')
 
-def write_keyword(self):
-    self.write(f'<keyword> {self.tokenizer.keyWord()} </keyword>\n')
+    def write_int_const(self):
+        self.write(f'<integerConstant> {self.tokenizer.intVal()} </integerConstant>\n')
 
+    def write_str_const(self):
+        self.write(f'<stringConstant> {self.tokenizer.stringVal()} </stringConstant>\n')
 
-def write_symbol(self):
-    symbol = self.tokenizer.symbol()
-    if symbol == "<":
-        symbol = "&lt;"
-    elif symbol == ">":
-        symbol = "&gt;"
-    elif symbol == "&":
-        symbol = "&amp;"
-    self.write(f'<symbol> {symbol} </symbol>\n')
+    def write_identifier(self):
+        self.write(f'<identifier> {self.tokenizer.identifier()} </identifier>\n')
 
-
-def write_int_const(self):
-    self.write(f'<integerConstant> {self.tokenizer.intVal()} </integerConstant>\n')
-
-
-def write_str_const(self):
-    self.write(f'<stringConstant> {self.tokenizer.stringVal()} </stringConstant>\n')
-
-
-def write_identifier(self):
-    self.write(f'<identifier> {self.tokenizer.identifier()} </identifier>\n')
-
-
-def compile_type_and_varName(self, is_class, p_kind):
-    """클래스인 경우 외부에서 kind를 주입받음. 서브루틴의 경우 kind는 local로 고정"""
-    if is_class:
-        kind = p_kind
-    else:
-        kind = LOCAL
-    if self.tokenizer.tokenType() == self.tokenizer.KEYWORD:
-        # self.write_keyword()
-        type = self.tokenizer.keyWord()  # void
-    elif self.tokenizer.tokenType() == self.tokenizer.IDENTIFIER:
-        # self.write_identifier()  # identifier - class type
-        type = self.tokenizer.tokenType()  # identifier - class type
-    self.tokenizer.advance()
-    # self.write_identifier()  # varName
-    var_name = self.tokenizer.identifier()
-
-    self.symbol_table.define(var_name, type, kind)
-
-    self.tokenizer.advance()
-    while self.tokenizer.symbol() == ",":
-        # self.write_symbol()  # ,
+    def compile_type_and_varName(self, is_class, p_kind):
+        """클래스인 경우 외부에서 kind를 주입받음. 서브루틴의 경우 kind는 local로 고정"""
+        if is_class:
+            kind = p_kind
+        else:
+            kind = LOCAL
+        if self.tokenizer.tokenType() == self.tokenizer.KEYWORD:
+            # self.write_keyword()
+            type = self.tokenizer.keyWord()  # void
+        elif self.tokenizer.tokenType() == self.tokenizer.IDENTIFIER:
+            # self.write_identifier()  # identifier - class type
+            type = self.tokenizer.tokenType()  # identifier - class type
         self.tokenizer.advance()
-        # self.write_identifier()  # another varName
-        another_var_name = self.tokenizer.identifier()
-        self.symbol_table.define(another_var_name, type, kind)
+        # self.write_identifier()  # varName
+        var_name = self.tokenizer.identifier()
+
+        self.symbol_table.define(var_name, type, kind)
+
         self.tokenizer.advance()
-    # self.write_symbol()  # ;
-    self.tokenizer.advance()
+        while self.tokenizer.symbol() == ",":
+            # self.write_symbol()  # ,
+            self.tokenizer.advance()
+            # self.write_identifier()  # another varName
+            another_var_name = self.tokenizer.identifier()
+            self.symbol_table.define(another_var_name, type, kind)
+            self.tokenizer.advance()
+        # self.write_symbol()  # ;
+        self.tokenizer.advance()
+
+    def get_new_label(self) -> str:
+        self.label_count += 1
+        return f'L{self.label_count}'
 
 
 class JackAnalyzer:
