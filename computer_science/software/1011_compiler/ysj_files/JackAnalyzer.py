@@ -61,6 +61,41 @@ class SymbolTable:
         raise Exception
 
 
+class VMWriter:
+    arithmetic = {'ADD': 'add', 'SUB': 'sub', 'NEG': 'neg', 'EQ': 'eq', 'GT': 'gt', 'LT': 'lt', 'AND': 'and',
+                  'OR': 'or', 'NOT': 'not'}
+
+    def __init__(self, path):
+        self.file = open(path, 'w')
+
+    def write_push(self, segment, index):
+        self.file.write(f'push {segment} {str(index)}\n')
+
+    def write_pop(self, segment, index):
+        self.file.write(f'call {segment} {str(index)}\n')
+
+    def write_arithmetic(self, command):
+        self.file.write(f'{self.arithmetic[command]}\n')
+
+    def write_label(self, label):
+        self.file.write(f'label {label}\n')
+
+    def write_goto(self, label):
+        self.file.write(f'goto {label}\n')
+
+    def write_if(self, label):
+        self.file.write(f'if-goto {label}\n')
+
+    def write_call(self, name, nArgs):
+        self.file.write(f'call {name} {str(nArgs)}\n')
+
+    def write_function(self, name, nLocals):
+        self.file.write(f'function {name} {str(nLocals)}\n')
+
+    def write_return(self):
+        self.file.write('return\n')
+
+
 class JackTokenizer:
     """
     JackTokenizer module as described in NAND2Tetris chapter 10
@@ -145,11 +180,12 @@ class JackTokenizer:
 
 
 class CompilationEngine:
-    def __init__(self, path, jacktokenizer: JackTokenizer):
+    def __init__(self, path, jacktokenizer: JackTokenizer, vm_path):
         self.file = open(path, 'w')
         self.tokenizer = jacktokenizer
         self.indent_level = 0
         self.symbol_table = SymbolTable()
+        self.vm_writer = VMWriter(vm_path)
 
     def compile_class(self):
         if self.tokenizer.hasMoreTokens():
@@ -574,7 +610,7 @@ class JackAnalyzer:
 
     def analyze_file(self, file_path):
         self.jt = JackTokenizer(file_path + '.jack')
-        self.ce = CompilationEngine(file_path + '.xml', self.jt)
+        self.ce = CompilationEngine(file_path + '.xml', self.jt, file_path + '.vm')
         self.ce.compile_class()
 
 
