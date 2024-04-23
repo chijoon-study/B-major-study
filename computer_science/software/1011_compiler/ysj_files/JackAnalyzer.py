@@ -14,7 +14,51 @@ DIGIT_PATTERN = re.compile("^\s*(\d+)\s*")
 STRING_PATTERN = re.compile("^\s*\"(.*)\"\s*")
 IDENTIFIER_PATTERN = re.compile("^\s*([a-zA-Z_][a-zA-Z1-9_]*)\s*")
 
-DEBUGGING = False
+FIELD = 'field'
+STATIC = 'static'
+LOCAL = 'local'
+ARGUMENTS = 'argument'
+
+
+class SymbolTable:
+
+    def __init__(self):
+        self.class_table = {}
+        self.kind_idx = {'field': 0, 'static': 0, 'local': 0, 'argument': 0}
+        self.sub_routine_table = {}
+
+    def start_subroutine(self):
+        self.sub_routine_table = {}
+        self.kind_idx['local'] = 0
+        self.kind_idx['argument'] = 0
+
+    def define(self, name, var_type, kind):
+        if kind in [FIELD, STATIC]:
+            self.class_table[name] = [var_type, kind, self.kind_idx[kind]]
+        elif kind in [LOCAL, ARGUMENTS]:
+            self.class_table[name] = [var_type, kind, self.kind_idx[kind]]
+        self.kind_idx[kind] += 1
+
+    def var_count(self, kind):
+        return self.kind_idx[kind]
+
+    def kind_of(self, name):
+        return self.get_row(name)[1]
+
+    def type_of(self, name):
+        return self.get_row(name)[0]
+
+    def index_of(self, name):
+        return self.get_row(name)[2]
+
+    # 여기까지 API
+
+    def get_row(self, name):
+        if name in self.sub_routine_table:
+            return self.sub_routine_table[name]
+        if name in self.class_table:
+            return self.class_table[name]
+        raise Exception
 
 
 class JackTokenizer:
@@ -105,6 +149,7 @@ class CompilationEngine:
         self.file = open(path, 'w')
         self.tokenizer = jacktokenizer
         self.indent_level = 0
+        self.symbol_table = SymbolTable()
 
     def compile_class(self):
         if self.tokenizer.hasMoreTokens():
@@ -409,7 +454,7 @@ class CompilationEngine:
                 self.tokenizer.advance()
                 self.compile_expression()
                 self.write_symbol()
-            elif self.tokenizer.symbol() == "."
+            elif self.tokenizer.symbol() == ".":
                 sanity_check = True
                 self.write_symbol()
                 self.tokenizer.advance()
