@@ -171,7 +171,7 @@ class JackTokenizer:
                                 self.text = re.sub(IDENTIFIER_PATTERN, "", self.text)
                                 self._tokenType = JackTokenizer.IDENTIFIER
                                 self._currentToken = current_match.group(1)
-        print(self._currentToken)
+        #print(self._currentToken) - 디버깅용
 
     def tokenType(self):
         return self._tokenType
@@ -330,7 +330,6 @@ class CompilationEngine:
                 self.compile_do()
             elif self.tokenizer.keyWord() == "return":
                 self.compile_return()
-                print("______return__________________")
 
         # self.indent_level -= 1
         # self.write(f'</statements>\n')
@@ -444,7 +443,7 @@ class CompilationEngine:
 
         # self.indent_level -= 1
         # self.write(f'</whileStatement>\n')
-        # self.tokenizer.advance()
+        self.tokenizer.advance()
 
     def compile_return(self):
         # cur token is return, advance by outer # TODO 이거 맞나?
@@ -568,7 +567,7 @@ class CompilationEngine:
                 # segment = self.kind_to_segment[kind] #TODO 여기 관련된 부분 kind 이거 관련한 부분 나중에 지우기
                 self.vm_writer.write_push(kind, index)  # TODO 이 부분 이해가 잘 안감
 
-                self.vm_writer.write('add')
+                self.vm_writer.write_arithmetic('add')
 
                 self.vm_writer.write_pop('pointer', 1)
                 self.vm_writer.write_push('that', 0)
@@ -697,7 +696,7 @@ class JackAnalyzer:
         if os.path.isdir(self.path):
             #            dir_path = os.path.basename(os.path.normpath(self.path))
             self.analyze_dir()
-        else:
+        else: # file인 경우
             file_path = self.path[:-5]
             self.analyze_file(file_path)
 
