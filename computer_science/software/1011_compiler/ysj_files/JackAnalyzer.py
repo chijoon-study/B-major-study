@@ -388,65 +388,7 @@ class CompilationEngine:
         self.indent_level -= 1
         self.write(f'</expression>\n')
 
-    # 뭔가 잘 동작하지 않는데, 원인을 모르겠음...
-    # def compile_term(self):
-    #     # 이거 뭔 용도지, 그 하위 term 관련한 처리 같은데, 이해를 잘 못하겠음
-    #     sanity_check = True
-    #
-    #     self.write(f'<term>\n')
-    #     self.indent_level += 1
-    #
-    #     token_type = self.tokenizer.tokenType()
-    #     if token_type == JackTokenizer.IDENTIFIER:
-    #         sanity_check = False
-    #         self.write_identifier()
-    #
-    #         self.tokenizer.advance()
-    #
-    #         symbol = self.tokenizer.symbol()
-    #         if symbol in '.[(':
-    #             sanity_check = True
-    #
-    #             self.write_symbol()
-    #             self.tokenizer.advance()
-    #             if symbol == '.':  # 서브루틴 호출 시
-    #                 self.write_identifier()  # 서브루틴 식별자
-    #                 self.tokenizer.advance()
-    #                 self.write_symbol()  # (
-    #                 self.tokenizer.advance()  # 여기 다음은 symbol == '(' 와 동일.
-    #                 self.compile_expression_list()
-    #                 self.write_symbol()
-    #             elif symbol == '[':  # 배열 원소
-    #                 self.compile_expression()
-    #                 self.write_symbol()
-    #             elif symbol == '(':  # 메서드 호출 - m() 같은 경우 - 내부적으론 this.m()로 판단
-    #                 self.compile_expression_list()
-    #                 self.write_symbol()
-    #     elif token_type == JackTokenizer.STRING_CONST:
-    #         self.write_str_const()
-    #     elif token_type == JackTokenizer.INT_CONST:
-    #         self.write_int_const()
-    #     elif token_type == JackTokenizer.KEYWORD:
-    #         self.write_keyword()
-    #     elif token_type == JackTokenizer.SYMBOL:
-    #         if self.tokenizer.symbol() == '(':
-    #             self.write_symbol()  # (
-    #             self.tokenizer.advance()
-    #             self.compile_expression()  # expression
-    #             self.write_symbol()  # )
-    #         elif self.tokenizer.symbol() == '~' or self.tokenizer.symbol() == '-':
-    #             self.write_symbol()
-    #             self.tokenizer.advance()
-    #             self.compile_term()
-    #
-    #     if sanity_check:
-    #         self.tokenizer.advance()
-    #
-    #     self.indent_level -= 1
-    #     self.write(f'</term>\n')
-
     def compile_term(self):
-        # debugging - not finished!!
         sanity_check = True
         self.write(f'<term>\n')
         self.indent_level += 1
@@ -467,7 +409,7 @@ class CompilationEngine:
                 self.tokenizer.advance()
                 self.compile_expression()
                 self.write_symbol()
-            elif self.tokenizer.symbol() == ".":  ## subroutine case
+            elif self.tokenizer.symbol() == "."
                 sanity_check = True
                 self.write_symbol()
                 self.tokenizer.advance()
