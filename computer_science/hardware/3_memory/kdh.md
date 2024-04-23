@@ -30,7 +30,27 @@ tock이 끝나고 tick시작하는, 즉 한 사이클이 끝난 후의 로직게
 이 정보를 저장하기 위한 최소조건은 n+1번째 time cycle에서 n번째 time cycle에서의 state를 아는 것이다.  
 flip flop은 그 최소조건을 만족하게 해주는 칩이다.
 
+> The Nand- based DFF implementations are elegant, yet intricate and impossible to model in our hardware simulator since they require feedback loops among combinational gates. Wishing to abstract away this complexity, we will treat the DFF as a primitive building block
+
+nand gate로 구현된 flip flop은 우아하지만 책에서 제공하는 하드웨어 시뮬레이터는 모든 combinational 칩들의 피드백 루프를 요구하기에 구현이 불가합니다.  
+때문에 책에서는 flip flop을 원시 칩으로서 제공합니다.(피드백 루프를 요구한단게 필자도 정확히 무슨 말인지는 모르겠지만 또 어떤 complexity가 있단 것만 알고 넘어갑시다)
+
 ## register
+register는 단순히 Bit 칩을 여러개 쌓은 칩입니다.(칩이름이 Bit입니다. 아마 1 bit짜리 메모리라 저렇게 작명된 것으로 추측해봅니다)  
+Bit칩의 구조는 넘어가고 register의 인터페이스를 보면 아래와 같습니다.  
+
+![](./kdh_files/register.png)
+
+그리고 메모리는 이 레지스터를 또 여러개 쌓은 칩입니다.(정말 간단하죠?)  
+
+![](./kdh_files/memory.png)
+
+다만 ram에는 address라는 입력이 추가로 생겼는데 이는 단순히 몇번째 register에 access할지 정하는 주소 값입니다.  
+
 
 
 ## counter
+![](./kdh_files/counter.png)
+
+현 챕터는 카운터의 역할에 대해 깊게 설명하지 않으므로 인터페이스만 보고 넘어갑니다.  
+다만 후에(챕터5) 다시 등장할 예정이란 것만 알고 넘어갑시다.  
