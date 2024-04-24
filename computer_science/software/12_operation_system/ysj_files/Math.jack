@@ -1,0 +1,154 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Math.jack
+
+/**
+ * A basic math library.
+ */
+class Math {
+	// n이 2의 보수를 표현하는데 사용되는 비트라는데, 무슨 의미인지 이해를 못했음.
+    static int n;             // Number of bits used for representing a two's complement integer
+    static Array powersOfTwo; // Stores 2^0, 2^1, 2^2,..., 2^(n-1)
+
+    /** Initializes the library. */
+    function void init() {
+		let powersOfTwo = Array.new(16);
+		let powersOfTwo[0] = 1;
+		let powersOfTwo[1] = 2;
+		let powersOfTwo[2] = 4;
+		let powersOfTwo[3] = 8;
+		let powersOfTwo[4] = 16;
+		let powersOfTwo[5] = 32;
+		let powersOfTwo[6] = 64;
+		let powersOfTwo[7] = 128;
+		let powersOfTwo[8] = 256;
+		let powersOfTwo[9] = 512;
+		let powersOfTwo[10] = 1024;
+		let powersOfTwo[11] = 2048;
+		let powersOfTwo[12] = 4096;
+		let powersOfTwo[13] = 8192;
+		let powersOfTwo[14] = 16384;
+        // 32768는 "Integer constant too big" 문제 생김
+		let powersOfTwo[15] = 16384 + 16384;
+		return;
+    }
+
+    /** Returns the product of x and y.
+     *  When a Jack compiler detects the multiplication operator '*'
+     *  in an expression, it handles it by invoking this method.
+     *  Thus, in Jack, x * y and Math.multiply(x,y) return the same value.
+     */
+    function int multiply(int x, int y) {
+        // shiftedX(시프트 된 X)
+        var int i, sum, shiftedX;
+
+		let i = 0;
+		let sum = 0;
+		let shiftedX = x;
+
+        // 0~15 비트까지 수행
+		while (i < 16) {
+			if (Math.bit(y, i) = true) {
+                // i가 1이면 x * 10 더하기
+				let sum = sum + shiftedX;
+			}
+			let shiftedX = shiftedX + shiftedX;
+			let i = i + 1;
+		}
+		return sum;
+    }
+
+    /** Returns the integer part of x / y.
+     *  When a Jack compiler detects the division operator '/'
+     *  an an expression, it handles it by invoking this method.
+     *  Thus, x/y and Math.divide(x,y) return the same value.
+     */
+    function int divide(int x, int y) {
+        var int q, result, isNegative;
+
+        let isNegative = 0;
+        if ((x < 0 & y > 0) | (x > 0 & y < 0)) {
+            let isNegative = 1;
+        }
+        let x = Math.abs(x);
+        let y = Math.abs(y);
+
+        if(y > x) {
+            return 0;
+        }
+        // 재귀적으로 수행
+        let q = Math.divide(x, y + y);
+        // 현재 몫에 2를 곱한 값을 y와 비교하여 x - (q * 2 * y)가 y보다 작다면 몫을 1 증가
+        // 근데 이거 책에서 설명한 구현 방식이랑은 다른거 아닌가?
+        if(x - (Math.multiply(q + q, y)) < y) {
+            let result = q + q;
+        }
+        else {
+            let result = q + q + 1;
+        }
+
+        if(isNegative = 1) {
+            let result = -result;
+        }
+        return result;
+    }
+
+
+    /** Returns the integer part of the square root of x.
+    */
+    function int sqrt(int x) {
+        var int result;
+		var int j;
+        var int checked;
+        var int squared;
+
+        let result = 0;
+        let j = 7;
+        while(~(j < 0)) {
+            let checked = result + powersOfTwo[j];
+            let squared = Math.multiply(checked, checked);
+            if(~(squared > x) & (squared > 0)) {
+                let result = checked;
+            }
+            let j = j - 1;
+        }
+        return result;
+    }
+
+    /** Returns the greater value.
+    */
+    function int max(int a, int b) {
+        if (a > b) {
+            return a;
+        }
+        return b;
+    }
+
+    /** Returns the smaller value.
+    */
+    function int min(int a, int b) {
+        if (a < b) {
+            return a;
+        }
+        return b;
+    }
+
+    /** Returns the absolute value of x
+    */
+    function int abs(int x) {
+        if (x < 0) {
+            return -1 * x;
+        }
+        return x;
+    }
+
+    // 여기까지 API
+
+    /** 정수 x의 i번째 비트가 1이면 ture, 아니면 false를 반환한다.
+    */
+    function boolean bit(int x, int i) {
+        // 비트마스트 동작이 있었는지 몰랐네, 정수의 경우에는 &가 비트를 기준으로 연산한다고 함.
+        return ~((x & powersOfTwo[i]) = 0);
+    }
+}

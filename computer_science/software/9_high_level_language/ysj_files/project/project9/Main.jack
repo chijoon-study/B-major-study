@@ -1,0 +1,190 @@
+/**
+* Main class: Implements the logic for the rock-paper-scissors game
+*/
+class Main {
+   static int computerChoice; // Computer's choice
+   static Array gameResult; // Array to store game result and choices
+   static char userInput;
+   static char randomSeed;
+   static int isGameQuit; // Indicates if the game should quit
+   static int isGameEnd; // Indicates if the game has ended and waiting for user input
+   static int isRestartGame;
+   static int isFirstGame;
+
+   /**
+    * Main function: Runs the game and handles user interaction
+    */
+   function void main() {
+       let gameResult = Array.new(3);
+       let computerChoice = 4;
+       let isGameQuit = 0;
+       let isRestartGame = 1;
+       let isFirstGame = 1;
+
+       while (isGameQuit < 1) {
+           if (isRestartGame = 1) {
+               // Restart or start the game
+               do Output.moveCursor(0, 0);
+               do Main.resetGame();
+               let isRestartGame = 0;
+           }
+
+           if (isFirstGame = 1) {
+               do Main.println("It Request One Time And Use For Random Seed.");
+               do Main.print("Input Any Char: ");
+               let randomSeed = Keyboard.readChar();
+               do Output.println();
+               let isFirstGame = 0;
+           }
+
+           do Main.print("Input Your Choice: ");
+           let userInput = Keyboard.readChar();
+           do Output.println();
+           let gameResult = Main.playGame(randomSeed, userInput);
+
+           do Main.handleGameResult(gameResult);
+
+           let isGameEnd = 0;
+           while (isGameEnd < 1) {
+               do Main.print("Quit or Restart: ");
+               let userInput = Keyboard.readChar();
+               do Main.handlePostGameInput(userInput);
+           }
+       }
+       return;
+   }
+
+   /**
+    * Game initialization function: Initializes the game result and screen
+    */
+   function void resetGame() {
+       let gameResult[0] = -100;
+       let gameResult[1] = -100;
+       let gameResult[2] = -100;
+       do Screen.clearScreen();
+       do Main.println("Start.");
+       do Main.println("Input: 1=Scissors, 2=Rock, 3=Paper, R/r: Restart, Q/q: Quit");
+       return;
+   }
+
+   /**
+    * Game logic function: Calculates the game result based on user and computer choices
+    */
+   function Array playGame(int randomSeed, int userInput) {
+       var int userChoice;
+//       if ((userInput = 81) | (userInput = 113)) { // Q or q
+//           let gameResult[0] = -999; // Quit game
+//           return gameResult;
+//       }
+//       if ((userInput = 82) | (userInput = 114)) { // R or r
+//           let gameResult[0] = -888; // Restart game
+//           return gameResult;
+//       }
+       if (~(userInput = 49) & ~(userInput = 50) & ~(userInput = 51)) { // Input other than 1, 2, 3
+           let gameResult[0] = -777; // Invalid input
+           return gameResult;
+       }
+
+       // Calculate computer's choice
+       let computerChoice = ((computerChoice + randomSeed) - (((computerChoice + randomSeed) / 3) * 3)) + 1;
+       let gameResult[1] = computerChoice;
+       let userChoice = (userInput - 48);
+       let gameResult[2] = userChoice;
+
+       // Calculate game result
+       let gameResult[0] = -1; // Default: Computer wins
+       if (userChoice = computerChoice) {
+           let gameResult[0] = 0; // Draw
+       }
+       if ((userChoice = 1 & computerChoice = 3) | (userChoice = 2 & computerChoice = 1) | (userChoice = 3 & computerChoice = 2)) {
+           let gameResult[0] = 1; // User wins
+       }
+       return gameResult;
+   }
+
+   /**
+    * Game result handling function: Prints appropriate messages and updates state variables based on the game result
+    */
+   function void handleGameResult(Array gameResult) {
+       if (gameResult[0] = -999) { // Quit game
+           do Main.println("End Game.");
+           let isGameQuit = 1;
+       }
+       if (gameResult[0] = -888) { // Restart game
+           let isRestartGame = 1;
+       }
+       if (gameResult[0] = -777) { // Invalid input
+           do Main.println("Wrong Input.");
+       }
+       if ((gameResult[0] = -1) | (gameResult[0] = 0) | (gameResult[0] = 1)) { // Valid game result
+           do Main.print("You: ");
+           do Main.printChoiceToStr(gameResult[2]); // Print user's choice
+           do Main.print(", AI: ");
+           do Main.printChoiceToStr(gameResult[1]); // Print computer's choice
+           do Output.println();
+           if (gameResult[0] = 0) {
+               do Main.println("you draw.");
+           }
+           if (gameResult[0] = 1) {
+               do Main.println("you win!");
+           }
+           if (gameResult[0] = -1) {
+               do Main.println("you lose.");
+           }
+       }
+       return;
+   }
+
+   /**
+    * Post-game interaction handling function: Handles user input to restart or quit the game
+    */
+   function void handlePostGameInput(int userInput) {
+       if ((userInput = 81) | (userInput = 113)) { // Q or q
+           let isGameQuit = 1;
+           let isGameEnd = 1;
+           return;
+       }
+       if ((userInput = 82) | (userInput = 114)) { // R or r
+           let isRestartGame = 1;
+           let isGameEnd = 1;
+           return;
+       }
+       // Invalid input
+       do Output.println();
+       do Main.println("Wrong Input. Try Again.");
+       return;
+   }
+
+   /**
+    * Function to print the choice as a string
+    */
+   function void printChoiceToStr(int choice) {
+       if (choice = 1) {
+           do Output.printString("Scissors");
+       }
+       if (choice = 2) {
+           do Output.printString("Rock");
+       }
+       if (choice = 3) {
+           do Output.printString("Paper");
+       }
+       return;
+   }
+
+   /**
+    * Function to print a string
+    */
+   function void print(String message) {
+       do Output.printString(message);
+       return;
+   }
+
+   /**
+    * Function to print a string and add a newline
+    */
+   function void println(String message) {
+       do Output.printString(message);
+       do Output.println();
+       return;
+   }
+}

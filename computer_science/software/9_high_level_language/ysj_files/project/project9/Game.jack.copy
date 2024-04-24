@@ -1,0 +1,57 @@
+class Game {
+
+    field Array gameResult;
+    field int computerChoice;
+
+    constructor Game new() {
+      let gameResult = Array.new(2);
+      let computerChoice = 4;
+      return this;
+   }
+
+    method void resetGame() {
+        // gameResult 값 초기화
+        let gameResult[0] = 0;
+        let gameResult[1] = 0;
+
+        do Screen.clearScreen();
+        do Output.printString("\n가위바위보 게임을 시작합니다.");
+        do Output.printString("\n1: 가위, 2: 바위, 3: 보, R/r: 재시작, Q/q: 종료\n");
+        return;
+    }
+
+    method Array playGame(int randInput, int userInput) {
+        var int userChoice;
+        
+        if ((userInput = 81) | (userInput = 113)) { // Q or q
+            let gameResult[0] = -999;
+            return gameResult;
+        } 
+        if ((userInput = 82) | (userInput = 114)) { // R or r
+            let gameResult[0] = -888;
+            return gameResult;
+        } 
+        if (~(userInput = 49) & ~(userInput = 50) & ~(userInput = 51)) { // 1 or 2 or 3
+            let gameResult[0] = -777;
+            return gameResult;
+        }
+
+        // 예측하기 어려운 결과를 위해 기존 값도 더함
+        // (computerChoice+randInput) - ((computerChoice+randInput) / 3) = (computerChoice+randInput) % 3
+        let computerChoice = (computerChoice+randInput) - ((computerChoice+randInput) / 3) + 1;
+
+        let userChoice = (userInput - 48);
+
+        // else if 하려면 else 코드블록 안에서 계속 중첩되는 형태라 이런 식으로 구현함
+        let gameResult[1] = -1; // 컴퓨터 승, 기본값 
+        if (userChoice = computerChoice) {
+            let gameResult[1] = 0; // 무승부
+        } 
+        if ((userChoice = 1 & computerChoice = 3) | (userChoice = 2 & computerChoice = 1) | (userChoice = 3 & computerChoice = 2)) {
+            let gameResult[1] = 1; // 사용자 승
+        }
+
+        return gameResult;
+    }
+}
+

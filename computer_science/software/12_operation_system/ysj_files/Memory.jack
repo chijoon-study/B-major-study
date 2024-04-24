@@ -1,0 +1,97 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+class Memory {
+
+    static int ram;  // 트랩도어 or 백도어로 메모리를 우회적으로 접근할 수 있다. 주소 0(init에서 설정한 값) + i에 접근한다. 책에서 자세하게 설명.
+    static Array heap; // that 역할을 하기 위해서 선언한거 같은데... 잘 모르겠음
+    // that 역할이라고 한 이유는 객체 포인터 + 0 은 this, 객체 포인터 + 1은 that이라 그럼
+    static Array freeList; // 할당 해제된 메모리 블록들의 연결 리스트 시작점
+
+
+    /** Initializes the class. */
+    function void init() {
+        let ram = 0;
+        let heap = 2048;
+        let freeList = 2048;
+        let heap[0] = 0; // Next
+        let heap[1] = 14335; // Size
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+        return ram[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+        let ram[address] = value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. */
+    function int alloc(int size) {
+        var Array curr_addr; // 현재 블록의 주소
+        var int new_free_block; // 새로 할당할 블록 주소
+        var int curr_size; // 현재 블록의 크기
+
+        let curr_addr = freeList; // freeList 부터 시작
+        
+        // freeList를 순회하며 적절한 크기의 블록 찾기
+        while (~(curr_addr[0] = 0)) {
+            let curr_size = curr_addr[1];
+            if (curr_size > (size + 2)) { // size+2 보다 커야 함. idx 0은 next 포인터, 1은 크기 정보를 가지므로
+                // 값이 할당되었다고 가정하고 나머지 블록을 새 블록으로 저장
+                let new_free_block = curr_addr + (size + 2);  // 새로운 블록의 주소는 기존 주소 + 새로 할당한 사이즈
+                let new_free_block[0] = 0;
+                let new_free_block[1] = curr_size - size;
+                let freeList = new_free_block;
+                return curr_addr;
+            }
+            let curr_addr = curr_addr[0]; // 다음 블록으로 이동
+        }
+
+        // 이거 굳이 왜 이렇게 구현했지?
+        // freeList의 마지막 블록까지 왔으나 할당받지 못한 경우, 위와 동일하게 처리
+
+        let curr_size = curr_addr[1];
+        if (curr_size > (size + 2)) {
+            let new_free_block = curr_addr + (size + 2);
+            let new_free_block[0] = 0;
+            let new_free_block[1] = curr_size - size;
+            let freeList = new_free_block;
+            let curr_addr[1] = size;
+            return curr_addr;
+        }
+        
+
+        return -1; // 적절한 크기가 없는 경우, -1 반환은 API에 있는 내용은 아님. 걍 한거
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+        var Array curr_addr;
+        let curr_addr = freeList; 
+
+        // 마지막 블록을 찾을 때까지 next node로 이동
+        while (~(curr_addr[0] = 0)) {
+            let curr_addr = curr_addr[0];
+        }
+
+        // 마지막 블록의 다음 포인터로 본인 배열 주소 설정
+        let curr_addr[0] = o;
+        // 본인 배열을 0(마지막 노드)로 설정
+        let o[0] = 0;
+        return;
+    }    
+}
