@@ -1,0 +1,52 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Sys.jack
+
+/**
+ * A library that supports various program execution services.
+ */
+class Sys {
+
+    /** Performs all the initializations required by the OS. */
+    function void init() {
+        do Keyboard.init();
+        do Memory.init();
+        do Math.init();
+        do Output.init();
+        do Screen.init();
+        do Main.main();
+        do Sys.halt();
+        return;
+    }
+
+    /** Halts the program execution. */
+    function void halt() {
+        // 컴퓨터가 종료되지 않게 무한루프 - 강의에선 종료된 것처럼 보이지 않기 위함이라고 하는데 그냥 종료를 안시키는거 아닌가?
+        while(true) {}
+        return;
+    }
+
+    /** Waits approximately duration milliseconds and returns.  */
+    function void wait(int duration) {
+        // 1 밀리초만큼 대기하는 것 처럼 보여야 한다는데, 실제로 매번 정확할 거 같지는 않아서.
+        // 그냥 시간 정보 없이 우회적으로 구현해야 해서 그런건가?
+        var int cur;
+        let duration = duration * 10; // 이 값을 조정해서 1밀리초 만큼 수행되게 해야 함
+        let cur = 0;
+        while (cur < duration) {
+            let cur = cur + 1;
+        }
+        return;
+    }
+
+    // 그냥 에러 출력
+    /** Displays the given error code in the form "ERR<errorCode>",
+     *  and halts the program's execution. */
+    function void error(int errorCode) {
+        do Output.printString("ERR<");
+        do Output.printInt(errorCode);
+        do Output.printString(">");
+        return;
+    }
+}
