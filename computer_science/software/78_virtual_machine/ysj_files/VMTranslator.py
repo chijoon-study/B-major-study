@@ -496,3 +496,4 @@ VMTranslator(sys.argv).run()
 
 # arg 변수 위치는 스택 최신 스택 - nArgs(그 인수 개수)
 # caller의 정보를 가지고 있는 frame을 저장함. 거기에는 메모리 segment(LCL, THAT 등), return시 사용할 주소 등이 포함된다.
+
