@@ -1,0 +1,90 @@
+class Main {
+    static int player;
+    static boolean exit;
+    function void main() {
+        var char key;  // the key currently pressed by the user
+        var int direction;
+        var Poo p;
+        let exit = false;
+        let p = Poo.new();
+
+        while (~exit) {
+             do Sys.wait(10);
+             let key = Keyboard.keyPressed();
+             let exit = p.movePoo(player);
+             if (key = 81)  { let exit = true; }     // q key
+             // if (key = 90)  { do square.decSize(); } // z key
+             // if (key = 88)  { do square.incSize(); } // x key
+             if (key = 130) { do Main.movePlayer(-1); }   // left arrow
+             if (key = 132) { do Main.movePlayer(1); }   // right arrow
+
+        } // while
+        return;
+    }
+
+
+    function void drawPlayer(int location) {
+        var int memAddress;
+        let memAddress = 24064+location;
+        do Memory.poke(memAddress+0, 0);
+        do Memory.poke(memAddress+32, 2064);
+        do Memory.poke(memAddress+64, 3120);
+        do Memory.poke(memAddress+96, 4680);
+        do Memory.poke(memAddress+128, 8580);
+        do Memory.poke(memAddress+160, 8196);
+        do Memory.poke(memAddress+192, 8196);
+        do Memory.poke(memAddress+224, 18018);
+        do Memory.poke(memAddress+256, 18018);
+        do Memory.poke(memAddress+288, -18403);
+        do Memory.poke(memAddress+320, -31807);
+        do Memory.poke(memAddress+352, -26215);
+        do Memory.poke(memAddress+384, 16962);
+        do Memory.poke(memAddress+416, 8196);
+        do Memory.poke(memAddress+448, 6168);
+        do Memory.poke(memAddress+480, 2016);
+        return;
+    }
+
+    function void erasePlayer() {
+        var int memAddress;
+        let memAddress = 24064+player;
+        do Memory.poke(memAddress+0, 0);
+        do Memory.poke(memAddress+32, 0);
+        do Memory.poke(memAddress+64, 0);
+        do Memory.poke(memAddress+96, 0);
+        do Memory.poke(memAddress+128, 0);
+        do Memory.poke(memAddress+160, 0);
+        do Memory.poke(memAddress+192, 0);
+        do Memory.poke(memAddress+224, 0);
+        do Memory.poke(memAddress+256, 0);
+        do Memory.poke(memAddress+288, 0);
+        do Memory.poke(memAddress+320, 0);
+        do Memory.poke(memAddress+352, 0);
+        do Memory.poke(memAddress+384, 0);
+        do Memory.poke(memAddress+416, 0);
+        do Memory.poke(memAddress+448, 0);
+        do Memory.poke(memAddress+480, 0);
+        return;
+    }
+
+
+
+    function void movePlayer(int direction) {
+        if (player = 0) {
+            if (direction = -1) {
+                let direction = direction + 1;
+            }
+        }
+        if (player = 31) {
+            if (direction = 1) {
+                let direction = direction - 1;
+            }
+        }
+        do Main.erasePlayer();
+        let player = player + direction;
+        do Main.drawPlayer(player);
+        return;
+    }
+
+
+}

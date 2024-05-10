@@ -1,0 +1,285 @@
+function Poo.new 0
+push constant 2
+call Memory.alloc 1
+pop pointer 0
+push constant 3
+pop this 1
+push pointer 0
+return
+function Poo.draw 1
+push argument 0
+pop pointer 0
+push constant 16384
+push argument 1
+add
+push this 1
+add
+pop local 0
+push local 0
+push constant 0
+add
+push constant 128
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 832
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 1056
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 1056
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 4088
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 4100
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 4100
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 8196
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 32764
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 32766
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 32767
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 32767
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 32767
+neg
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 16386
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 16380
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Poo.erase 1
+push argument 0
+pop pointer 0
+push constant 16384
+push argument 1
+add
+push this 1
+add
+pop local 0
+push local 0
+push constant 0
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 32
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 64
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 96
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 128
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 160
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 192
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 224
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 256
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 288
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 320
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 352
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 384
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 416
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 448
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push local 0
+push constant 480
+add
+push constant 0
+call Memory.poke 2
+pop temp 0
+push constant 0
+return
+function Poo.movePoo 1
+push argument 0
+pop pointer 0
+push this 0
+push constant 32
+call Math.multiply 2
+pop local 0
+push this 0
+push constant 239
+gt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push this 1
+push argument 1
+eq
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push constant 0
+not
+return
+label IF_FALSE1
+push pointer 0
+push local 0
+call Poo.erase 2
+pop temp 0
+push pointer 0
+call Poo.dispose 1
+pop temp 0
+push constant 0
+return
+label IF_FALSE0
+push pointer 0
+push local 0
+call Poo.erase 2
+pop temp 0
+push this 0
+push constant 1
+add
+pop this 0
+push this 0
+push constant 32
+call Math.multiply 2
+pop local 0
+push pointer 0
+push local 0
+call Poo.draw 2
+pop temp 0
+push constant 0
+return
+function Poo.dispose 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Memory.deAlloc 1
+pop temp 0
+push constant 0
+return

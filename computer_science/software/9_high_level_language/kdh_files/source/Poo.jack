@@ -1,0 +1,77 @@
+class Poo {
+    field int altitude;
+    field int latitude; // constant
+
+    constructor Poo new() {
+        let latitude = 3; // 0 ~ 32
+        return this;
+    }
+
+    method void draw(int location) {
+        var int memAddress;
+        let memAddress = 16384+location+latitude;
+        do Memory.poke(memAddress+0, 128);
+        do Memory.poke(memAddress+32, 832);
+        do Memory.poke(memAddress+64, 1056);
+        do Memory.poke(memAddress+96, 1056);
+        do Memory.poke(memAddress+128, 4088);
+        do Memory.poke(memAddress+160, 4100);
+        do Memory.poke(memAddress+192, 4100);
+        do Memory.poke(memAddress+224, 8196);
+        do Memory.poke(memAddress+256, 32764);
+        do Memory.poke(memAddress+288, -32766);
+        do Memory.poke(memAddress+320, -32767);
+        do Memory.poke(memAddress+352, -32767);
+        do Memory.poke(memAddress+384, -32767);
+        do Memory.poke(memAddress+416, 16386);
+        do Memory.poke(memAddress+448, 16380);
+        do Memory.poke(memAddress+480, 0);
+        return;
+    }
+
+    method void erase(int location) {
+        var int memAddress;
+        let memAddress = 16384+location+latitude;
+        do Memory.poke(memAddress+0, 0);
+        do Memory.poke(memAddress+32, 0);
+        do Memory.poke(memAddress+64, 0);
+        do Memory.poke(memAddress+96, 0);
+        do Memory.poke(memAddress+128, 0);
+        do Memory.poke(memAddress+160, 0);
+        do Memory.poke(memAddress+192, 0);
+        do Memory.poke(memAddress+224, 0);
+        do Memory.poke(memAddress+256, 0);
+        do Memory.poke(memAddress+288, 0);
+        do Memory.poke(memAddress+320, 0);
+        do Memory.poke(memAddress+352, 0);
+        do Memory.poke(memAddress+384, 0);
+        do Memory.poke(memAddress+416, 0);
+        do Memory.poke(memAddress+448, 0);
+        do Memory.poke(memAddress+480, 0);
+        return;
+    }
+
+    method boolean movePoo(int player) {
+        var int l;
+        let l = Math.multiply(altitude, 32);
+        // is poo get to ground
+        if (altitude > 239) {
+            if (latitude = player) {
+                return true;
+            }
+            do erase(l);
+            do dispose();
+            return false;
+        }
+        do erase(l);
+        let altitude = altitude + 1;
+        let l = Math.multiply(altitude, 32);
+        do draw(l);
+        return false;
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+}
