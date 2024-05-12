@@ -254,9 +254,9 @@ class CompilationEngine:
         if self.tokenizer.symbol() == "[":
             self.write_symbol()
 
+            self.tokenizer.advance()
             self.compile_expression()
 
-            self.tokenizer.advance()  # ]
             self.write_symbol()
 
             self.tokenizer.advance()  # =
