@@ -3,7 +3,6 @@ import os
 import re
 import sys
 
-sys.setrecursionlimit(100)
 
 COMMENT = "(//.*)|(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)"
 EMPTY_TEXT_PATTERN = re.compile("\s*")
@@ -21,7 +20,7 @@ class SymbolTable:
     def __init__(self):
         self.class_table = {}
         self.sub_routine_table = {}
-        self.kind_idx = {'field': 0, 'static': 0, 'local': 0, 'argument': 0}
+        self.kind_idx = {'this': 0, 'static': 0, 'local': 0, 'argument': 0}
 
     def start_subroutine(self):
         self.sub_routine_table = {}
@@ -38,6 +37,8 @@ class SymbolTable:
         self.kind_idx[kind] += 1
 
     def var_count(self, kind):
+        if kind == 'field':
+            kind = 'this'
         return self.kind_idx[kind]
 
     def kind_of(self, name):
@@ -127,7 +128,7 @@ class JackTokenizer:
         else:
             return True
 
-    def advance(self):
+    def advance(self):  # TODO identifier가 keyword로 시작하면 keyword로 인식되는 이슈(e.g Math.double -> 'Math', '.', 'do', 'ouble')
         if self.has_more_tokens():
             current_match = re.match(KEY_WORD_PATTERN, self.text)
             if current_match is not None:
@@ -225,7 +226,9 @@ class CompilationEngine:
             self.tokenizer.advance()  # }
 
     def compile_class_var_dec(self):
-        self.compile_type_and_varName(self.tokenizer.key_word())
+        kw = self.tokenizer.key_word()
+        self.tokenizer.advance()
+        self.compile_type_and_varName(kw)
 
     def compile_subroutine(self):
         self.symbol_table.start_subroutine()
@@ -250,7 +253,7 @@ class CompilationEngine:
             self.symbol_table.define('this', self.class_name, 'argument')
 
         if self.tokenizer.token_type() != self.tokenizer.SYMBOL:
-            self.compile_type_and_varName('argument')  # {
+            self.compile_type_and_varName('argument', True)  # )
             return
 
         self.tokenizer.advance()  # {
@@ -275,6 +278,7 @@ class CompilationEngine:
     def compile_var_dec(self):
         cnt = 0
         while self.tokenizer.key_word() == 'var':
+            self.tokenizer.advance()
             cnt += self.compile_type_and_varName('local')
 
         return cnt
@@ -323,56 +327,52 @@ class CompilationEngine:
         self.vm_writer.write_arithmetic('add')
 
     def write_array_index(self):
-        self.compile_expression()
-        self.tokenizer.advance()  # get ']' symbol
+        self.tokenizer.advance()  # exp
+        self.compile_expression()  # ]
 
     def compile_if(self):
         self.tokenizer.advance()  # (
-        self.compile_expression()
-        self.tokenizer.advance()  # )
+        self.tokenizer.advance()  # exp
+        self.compile_expression()  # )
+        current_if_counter = self.if_counter
         self.if_counter += 1
 
-        self.vm_writer.write_if('IF_TRUE' + str(self.if_counter))
-        self.vm_writer.write_goto('IF_FALSE' + str(self.if_counter))
-        self.vm_writer.write_label('IF_TRUE' + str(self.if_counter))
+        self.vm_writer.write_if('IF_TRUE' + str(current_if_counter))
+        self.vm_writer.write_goto('IF_FALSE' + str(current_if_counter))
+        self.vm_writer.write_label('IF_TRUE' + str(current_if_counter))
 
         self.tokenizer.advance()  # {
+        self.tokenizer.advance()  # statement keyword
         self.compile_statements()  # }
 
         self.tokenizer.advance()  # else or next statement keyword
         if self.tokenizer.token_type() == self.tokenizer.KEYWORD and \
                 self.tokenizer.key_word() == "else":
-            self.vm_writer.write_goto('IF_END' + str(self.if_counter))
-            self.vm_writer.write_label('IF_FALSE' + str(self.if_counter))
+            self.vm_writer.write_goto('IF_END' + str(current_if_counter))
+            self.vm_writer.write_label('IF_FALSE' + str(current_if_counter))
             self.tokenizer.advance()  # get '{' symbol
+            self.tokenizer.advance()  # statement keyword
             self.compile_statements()  # }
-            self.vm_writer.write_label('IF_END' + str(self.if_counter))
+            self.vm_writer.write_label('IF_END' + str(current_if_counter))
         else:
-            self.vm_writer.write_label('IF_FALSE' + str(self.if_counter))
+            self.vm_writer.write_label('IF_FALSE' + str(current_if_counter))
+
+        self.tokenizer.advance()
 
     def compile_while(self):
-        self.write("<whileStatement>")
-        self.indent_level += 1
-        self.write_keyword()
-
+        current_while_counter = self.while_counter
+        self.while_counter += 1
+        self.vm_writer.write_label('WHILE_EXP' + str(current_while_counter))
+        self.tokenizer.advance()  # get '(' symbol
         self.tokenizer.advance()
-        self.write_symbol()
-
-        self.tokenizer.advance()
-        self.compile_expression()
-
-        self.write_symbol()
-
-        self.tokenizer.advance()
-        self.write_symbol()
-
-        self.tokenizer.advance()
-        self.compile_statements()
-
-        self.write_symbol()
-
-        self.indent_level -= 1
-        self.write("</whileStatement>")
+        self.compile_expression()  # )
+        self.vm_writer.write_arithmetic('not')
+        self.vm_writer.write_if('WHILE_END' + str(current_while_counter))
+        self.tokenizer.advance()  # get '{' symbol
+        self.tokenizer.advance()  # statement keyword
+        self.compile_statements()  # }
+        self.vm_writer.write_goto('WHILE_EXP' + str(current_while_counter))
+        self.vm_writer.write_label('WHILE_END' + str(current_while_counter))
         self.tokenizer.advance()
 
     def compile_do(self):
@@ -426,28 +426,23 @@ class CompilationEngine:
         while self.tokenizer.token_type() == self.tokenizer.SYMBOL and \
                 self.tokenizer.symbol() in ['+', '-', '*', '/', '&', '|', '<', '>', '=']:
             op = self.tokenizer.symbol()
-            self.expression_op_stack.append(op)
             self.tokenizer.advance()
             self.compile_term()
-
-        while self.expression_op_stack:
-            op = self.expression_op_stack.pop()
             self.vm_writer.write_arithmetic(self.vm_writer.sign_to_op[op])
 
     def compile_term(self):
-        print(self.tokenizer._currentToken, 'term')
         sanity_check = True
 
         if self.tokenizer.token_type() == self.tokenizer.INT_CONST:
             val = self.tokenizer.int_val()
             self.vm_writer.write_push('constant', val)
         elif self.tokenizer.token_type() == self.tokenizer.STRING_CONST:
-            string = self.tokenizer.string_val()[1:-1]  # 큰따옴표 제거
+            string = self.tokenizer.string_val()
             self.vm_writer.write_push('constant', len(string))
             self.vm_writer.write_call(f'String.new', 1)
             for char in string:
                 self.vm_writer.write_push('constant', ord(char))  # unicode 상수
-                self.vm_writer.write_call(f'String.appendChar', 1)
+                self.vm_writer.write_call(f'String.appendChar', 2)
         elif self.tokenizer.token_type() == self.tokenizer.KEYWORD:
             if self.tokenizer.key_word() == "this":
                 self.vm_writer.write_push('pointer', 0)
@@ -462,6 +457,8 @@ class CompilationEngine:
             if self.tokenizer.symbol() == "[":  # e.g) identifier[expression]
                 sanity_check = True
                 self.compile_array_index(name)  # ]
+                self.vm_writer.write_pop('pointer', 1)
+                self.vm_writer.write_push('that', 0)
             elif self.tokenizer.symbol() == ".":  # e.g) identifier.function(exp_list)
                 sanity_check = True
                 self.compile_subroutine_call(name)  # )
@@ -504,36 +501,27 @@ class CompilationEngine:
 
         return cnt
 
-    def compile_type_and_varName(self, kind_):
+    def compile_type_and_varName(self, kind_, is_param=False):
         cnt = 1
-        self.tokenizer.advance()
-        type = self._type()
+        type_ = self._type()
         self.tokenizer.advance()
         name = self.tokenizer.identifier()
         self.tokenizer.advance()  # ; or , or )
-        self.symbol_table.define(name, type, kind_)
+        self.symbol_table.define(name, type_, kind_)
 
         while self.tokenizer.symbol() == ",":
             self.tokenizer.advance()
+            if is_param:
+                type_ = self._type()
+                self.tokenizer.advance()
             name = self.tokenizer.identifier()
-            self.symbol_table.define(name, type, kind_)
+            self.symbol_table.define(name, type_, kind_)
             self.tokenizer.advance()  # ; or , or )
             cnt += 1
 
         self.tokenizer.advance()
 
         return cnt
-
-    def _symbol(self):
-        symbol = self.tokenizer.symbol()
-        if self.tokenizer.symbol() == "<":
-            symbol = "&lt;"
-        elif self.tokenizer.symbol() == ">":
-            symbol = "&gt;"
-        elif self.tokenizer.symbol() == "&":
-            symbol = "&amp;"
-
-        return symbol
 
     def _type(self):
         if self.tokenizer.token_type() == self.tokenizer.KEYWORD:
@@ -568,4 +556,4 @@ class JackCompiler:
         self.ce.vm_writer.file.close()
 
 
-JackCompiler(['','/Users/humanlearning/chijoon-study/computer_science/software/1011_compiler/kdh_files/Seven']).run()
+JackCompiler(sys.argv).run()
