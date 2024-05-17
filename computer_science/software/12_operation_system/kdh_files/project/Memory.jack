@@ -1,0 +1,88 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Memory.jack
+
+/**
+ * This library provides two services: direct access to the computer's main
+ * memory (RAM), and allocation and recycling of memory blocks. The Hack RAM
+ * consists of 32,768 words, each holding a 16-bit binary number.
+ */ 
+class Memory {
+    static int ram;
+    static Array heap;
+    static Array freeList;
+
+    /** Initializes the class. */
+    function void init() {
+        let ram = 0;
+        let heap = 2048;
+        let freeList = 2048;
+        let heap[0] = 0; // Next
+        let heap[1] = 14335; // Size
+        return;
+    }
+
+    /** Returns the RAM value at the given address. */
+    function int peek(int address) {
+        return ram[address];
+    }
+
+    /** Sets the RAM value at the given address to the given value. */
+    function void poke(int address, int value) {
+        let ram[address] = value;
+        return;
+    }
+
+    /** Finds an available RAM block of the given size and returns
+     *  a reference to its base address. */
+    function int alloc(int size) {
+        var Array curr_addr; // 현재 블록의 주소
+        var int new_free_block; // 새로 할당할 블록 주소
+        var int curr_size; // 현재 블록의 크기
+
+        let curr_addr = freeList; // freeList 부터 시작
+
+        while (~(curr_addr[0] = 0)) {
+            let curr_size = curr_addr[1];
+            if (curr_size > (size + 2)) {
+                let new_free_block = curr_addr + (size + 2);  // 새로운 free block 세팅
+                let new_free_block[0] = 0;
+                let new_free_block[1] = curr_size - size;
+                let freeList = new_free_block;  // 정리에서 맨처음에는 블록 할당을 어떻게 해주냐 헀는데 맨위에부터 할당받는 객체들에게 딱 맞는 사이즈만큼 할당해줌, 즉 첫 한바퀴 동안은 파편화가 안일어남, free block들이 나눠져있지 않고 크게 하나가 있는거임
+                // 안일어난다고 표현하는게 맞는지는 모르겠는데 무튼 딱 깔금하게 할당해주는데
+                // 이후에 모든 메모리를 다쓰고 dealloc으로 반환받고 다시 할당해주면서 메모리가 점점더 작게 쪼개짐
+                return curr_addr;
+            }
+            let curr_addr = curr_addr[0];
+        }
+
+        // while 조건이 다음 포인터가 0일 경우라 마지막 블록은 체크를 안해서 한번더 체크해줌
+        let curr_size = curr_addr[1];
+        if (curr_size > (size + 2)) {
+            let new_free_block = curr_addr + (size + 2);
+            let new_free_block[0] = 0;
+            let new_free_block[1] = curr_size - size;
+            let freeList = new_free_block;
+            let curr_addr[1] = size;
+            return curr_addr;
+        }
+
+        return 0; // failure
+    }
+
+    /** De-allocates the given object (cast as an array) by making
+     *  it available for future allocations. */
+    function void deAlloc(Array o) {
+        var Array curr_addr;
+        let curr_addr = freeList;
+
+        while (~(curr_addr[0] = 0)) {
+            let curr_addr = curr_addr[0];
+        }
+
+        let curr_addr[0] = o;
+        let o[0] = 0;
+        return;
+    }    
+}

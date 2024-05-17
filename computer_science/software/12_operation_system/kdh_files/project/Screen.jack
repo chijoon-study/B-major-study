@@ -1,0 +1,167 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/12/Screen.jack
+
+/**
+ * A library of functions for displaying graphics on the screen.
+ * The Hack physical screen consists of 512 rows (indexed 0..511, top to bottom)
+ * of 256 pixels each (indexed 0..255, left to right). The top left pixel on 
+ * the screen is indexed (0,0).
+ */
+class Screen {
+    static Array powersOfTwo;
+	static boolean color;
+	static Array screen;
+
+    /** Initializes the Screen. */
+    function void init() {
+        let screen = 16384;  // screen base addr
+		let color = true;
+
+        let powersOfTwo = Array.new(16);
+		let powersOfTwo[0] = 1;
+		let powersOfTwo[1] = 2;
+		let powersOfTwo[2] = 4;
+		let powersOfTwo[3] = 8;
+		let powersOfTwo[4] = 16;
+		let powersOfTwo[5] = 32;
+		let powersOfTwo[6] = 64;
+		let powersOfTwo[7] = 128;
+		let powersOfTwo[8] = 256;
+		let powersOfTwo[9] = 512;
+		let powersOfTwo[10] = 1024;
+		let powersOfTwo[11] = 2048;
+		let powersOfTwo[12] = 4096;
+		let powersOfTwo[13] = 8192;
+		let powersOfTwo[14] = 16384;
+		let powersOfTwo[15] = 16384 + 16384;
+		return;
+    }
+
+    /** Erases the entire screen. */
+    function void clearScreen() {
+        var int i;
+		let i = 0;
+		while (i < 8192) {
+			let screen[i] = false; // 모든 픽셀을 흰색으로 설정
+		}
+		return;
+    }
+
+    /** Sets the current color, to be used for all subsequent drawXXX commands.
+     *  Black is represented by true, white by false. */
+    function void setColor(boolean b) {
+        let color = b;
+        return;
+    }
+
+    /** Draws the (x,y) pixel, using the current color. */
+    function void drawPixel(int x, int y) {
+        var int address;
+		var int mask;
+
+		let address = (y * 32) + (x / 16); // 픽셀의 메모리 주소 계산
+		let mask = powersOfTwo[x & 15]; // 비트 마스크 계산
+
+		if (color) {
+			let screen[address] = screen[address] | mask;
+		}
+		else {
+			let screen[address] = screen[address] & ~mask;
+		}
+		return;
+    }
+
+    /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
+    function void drawLine(int x1, int y1, int x2, int y2) {
+        var int dx, dy, dxd, dyd;
+        var int new_x, new_y;
+        var int a, b, diff;
+
+        let dx = Math.abs(x2 - x1); // x 차이의 절댓값
+        let dy = Math.abs(y2 - y1); // y 차이의 절댓값
+        let dxd = x2 > x1; // x 방향 플래그
+        let dyd = y2 > y1; // y 방향 플래그
+        let a = 0;
+        let b = 0;
+
+        // Horizontal line
+        if (dy = 0) {
+            while ((a < dx) | (a = dx)) {
+                if (dxd) {
+                    do Screen.drawPixel(x1 + a, y1);
+                } else {
+                    do Screen.drawPixel(x1 - a, y1);
+                }
+                let a = a + 1;
+            }
+        }
+
+        // Vertical line
+        if (dx = 0) {
+            while ((b < dy) | (b = dy)) {
+                if (dyd) {
+                    do Screen.drawPixel(x1, y1 + b);
+                } else {
+                    do Screen.drawPixel(x1, y1 - b);
+                }
+                let b = b + 1;
+            }
+        }
+
+        // 대각선인 경우
+        let diff = 0;
+        while (((a < dx) | (a = dx)) & ((b < dy) | (b = dy))) {
+            if (dxd) {
+                let new_x = x1 + a;
+            } else {
+                let new_x = x1 - a;
+            }
+            if (dyd) {
+                let new_y = y1 + b;
+            } else {
+                let new_y = y1 - b;
+            }
+            do Screen.drawPixel(new_x, new_y);
+            if (diff < 0) {
+                let a = a + 1;
+                let diff = diff + dy;
+            } else {
+                let b = b + 1;
+                let diff = diff - dx;
+            }
+        }
+
+        return;
+    }
+
+    /** Draws a filled rectangle whose top left corner is (x1, y1)
+     * and bottom right corner is (x2,y2), using the current color. */
+    function void drawRectangle(int x1, int y1, int x2, int y2) {
+        var int dx, a;
+        let dx = x2 - x1; // 가로 길이
+        let a = 0;
+        while ((a < dx) | (a = dx)) { // 가로 길이만큼 반복
+            do Screen.drawLine(x1 + a, y1, x1 + a, y2);
+            let a = a + 1;
+        }
+        return;
+    }
+
+    /** Draws a filled circle of radius r<=181 around (x,y), using the current color. */
+    function void drawCircle(int x, int y, int r) {
+        var int x1, y1, x2, y2;
+        var int dy;
+        let dy = -r;
+        while ((dy < r) | (dy = r)) {
+            let x1 = x - Math.sqrt((r * r) - (dy * dy));
+            let y1 = y + dy;
+            let x2 = x + Math.sqrt((r * r) - (dy * dy));
+            let y2 = y + dy;
+            do Screen.drawLine(x1, y1, x2, y2);
+            let dy = dy + 1;
+        }
+        return;
+    }
+}
