@@ -1,3 +1,7 @@
+
+- 누가 정리한 블로그 글 : https://catsbi.oopy.io/38b39243-d4ab-4e5d-8b45-713005420fe9
+- 영어로 정리한 거: https://github.com/ResidentMario/designing-data-intensive-applications-notes/tree/master
+
 # 데이터 중심 어플리케이션 설계
 
 ## 목차
