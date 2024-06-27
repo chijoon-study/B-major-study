@@ -30,3 +30,31 @@
 인데 이게 또 80페이지에 설명이 나옴  
 인메모리 balanced tree에 데이터를 저장한다고함(red-black 트리 같은)  
 그리고 balanced tree가 일정 threshold(보통 몇 메가 바이트)를 넘으면 그때 disk에 쓰기 작업 수행
+
+
+
+단어가 좀 틀려도 찾을 수 있는 인덱스??
+
+
+인메모리 db의 성능 향상의 주요원인은 디스크 읽기 배제가 아니다??
+
+
+star schema - fact table을 중심으로 dimension table들이 있는 구조
+snowflake schema - star schema의 dimension table들이 더 세분화 된 구조
+
+date table을 디멘션 테이블로 뺐을때 장점 : date에 좀더 다양한 정보를 표현할수 있음 e.g) is_holiday
+
+
+columnar db에서 정렬할때 각 열마다 따로 하면 안된다하는데 한 열 집합에서 각 행에 원래 순서를 기억하게끔 하면 안되나?  
+순서 정보가 더해져야해서 비 효율적인가?(각 열 집합마다 순서 정보를 붙여주는거니까 column * 2되는거라 비효율적이긴 할듯..)
+
+
+columnar db를 정렬하고 난 이후엔 그럼 쓰기가 추가되면?  
+-> lsm tree
+
+
+columnar db에서 캐싱은 materialized view라는 이름 으로 불림  
+rdb에서의 view와 다르게 실제로 쿼리 결과가 복사돼 디스크에 저장됨  
+하지만 그 뷰를 이루는 데이터가 수정 됐을때 materialized view도 수정 되어야하고 이는 매우 비싼 쓰기 비용을 초래하므로 OLTP에선 잘 안쓰임  
+하지만 읽기 부하가 큰 dw에선 이게 잘 쓰일 수 있음(근데 dw가 write연산이 더 많은거 아니었나)
+
