@@ -16,3 +16,13 @@
     - 읽기/쓰기 모든 부분에서 LSM Tree는 Sequential I/O 위주인 반면, B Tree는 Random I/O이다.
     - 아마 이후 장에서 나올수도 있는데, 찾아보면 좋을듯.
     - [내가 관련해서 정리한거](https://github.com/YangSiJun528/memory/blob/master/notes/series/cs_bookmark/DataBase%20-%20RDB,%20NoSQL,%20index%20%EB%93%B1.md#btree-%EC%9D%B8%EB%8D%B1%EC%8A%A4%EA%B0%80-%EB%8A%90%EB%A6%B0-%EC%9D%B4%EC%9C%A0)
+
+
+# 추가
+
+이야기하면서 추가로 이야기한 내용.
+
+inmemoryDB 조회 속도 빠른 이유 != 메모리에 데이터를 저장하기 때문
+왜? 디스크 DB도 메모리 캐싱하기 떄문.
+
+실제 빠른 이유: **디스크 관리 관련 오버헤드 없음** + 연산 속도 빠름 + (redis: 싱글 스레드로 인한 락 오버헤드 X) 
