@@ -146,4 +146,14 @@
 #### 후기
 
 - 결국 트레이드 오프 관계
-  - 쓰기 성능 높이기는 다중 쓰기로 가능 -> 대신 충돌 문제를 감수해야 함.
+  - 효율을 위해서 비동기, 멀티 리더 노드 선택 -> 더 많은 복제 일관성 보장 문제
+  - "이러한 문제를 어떻게 해결하는가?" 가 모든 복제 서비스의 핵심 주제가 아닐까...
+
+- 내용이 어려워서 약간 '여우와 신 포도' 같은 생각이 났다.
+  - "어차피 다 그냥 단일서버로 처리할 수 있는거 아님?" > 근데? 내가 다니는 회사만 해도 AWS Aurora (단일 노드 복제) 사용함...
+
+- 피그마나 디스코드/슬랙 같은게 다중 리더 복제로 본다는 관점이 신기했음.
+  - 더 찾아보니까 온라인 채팅의 경우에는 [CRDT](https://en.wikipedia.org/wiki/Conflict-free_replicated_data_type)가 주로 쓰이고, 구글 독스는 [OT](https://en.wikipedia.org/wiki/Operational_transformation)를 사용하고,피그마는 별도의 직접 구현 방식을 쓰는 듯? [피그마 공식문서 피셜임](https://www.figma.com/blog/how-figmas-multiplayer-technology-works/).
+  - https://velog.io/@heelieben/%EC%8B%A4%EC%8B%9C%EA%B0%84-%EB%8F%99%EC%8B%9C-%ED%8E%B8%EC%A7%91-OT-%EC%99%80-CRDT
+
+- 뭔가 게임도 비슷하지 않나 싶었는데, 게임은 서버에서 거의 모든 상태를 가지고 처리하니까... 다르다고 보는게 맞을듯.
