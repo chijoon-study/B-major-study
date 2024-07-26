@@ -1,6 +1,9 @@
 ### 7장 트랜잭션
 
 ### 정리
+
+DDIA 책이랑 [쉬운코드 데이터베이스 관련 영상](https://youtube.com/playlist?list=PLcXyemr8ZeoREWGhhZi5FZs6cvymjIBVe&si=D1d0T9rOXL1Elkmw)을 많이 참고함
+
 #### 트랜잭션 간단 설명
 
 목표: 데이터 시스템의 문제(네트워크, 중단, 경쟁 조건, 덮어쓰기, 작성 중인 데이터 읽기)를 단순화한다.
