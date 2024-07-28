@@ -89,3 +89,12 @@ Actual Serial Execution은 정말 말그대로 싱글스레드에서만 트랜�
 
 
 ### 2PL
+2PL은 lock이 좀더 깐깐해진 느낌이다.  
+snapshot isolation에서 읽기가 다른 쓰기를 block하지 않고 그 역도 동일하다면, 2PL에서는 
+- 같은 객체에 대해서 다른 트랜잭션이 read중이라면 write할 수 없음
+- 같은 객체에 대해서 다른 트랜잭션이 write중이라면 read할 수 없음
+
+
+근데 동시성 문제가 가장 쉽게 일어나는 write중 write는 가능한건가보니 안된다고함 
+https://chatgpt.com/c/fd7131d8-87eb-4d24-9311-e2b1438a4b55
+
