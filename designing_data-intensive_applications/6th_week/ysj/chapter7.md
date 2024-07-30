@@ -225,6 +225,53 @@ isolation level의 필요성: 모든 이상현상이 발생하지 않게 (완전
 
 ##### TODO 직렬화 설명하기
 
+##### 쉬운코드 - lock 기반 concurrency control & 2PL(two-phase locking)
+
+lock의 필요성: 동시(동시라는 말이 정확하지는 않지만 대충)에 어려 tx에서 데이터를 읽거나 쓰면 예상치 못한 결과가 발생할 수 있다. 이는 CS의 mutex와 비슷한 개념
+
+- read-lock, write-lock이 있음
+
+**lock 호환성**
+|  Lock type | read-lock | write-lock |
+|:----------:|:---------:|:----------:|
+|  read-lock |     ✔     |      X     |
+| write-lock |     X     |      X     |
+
+
+- 2PL
+  - tx에서 모든 locking operation이 최초의 unlock operation 보다 먼저 수행되게 하는 것.
+    - (이렇게 않하면 read-lock, write-lock을 써도 직렬성을 보장하지 못함. 자세한 건 책이나 영상 참고)
+  - 이런 식으로 lock을 취득하는 phase, lock을 반환하는 phase로 나뉜다. ![alt text](image.png)
+    - 물론 모든 2PL이 위 이미지 같은 순서로 동작하는건 아니다. 각자 다를 수 있음.
+
+- 2PL의 dead lock: 예방하지 않늗다. 검출 후 해결(롤백) 방식
+
+- 2PL의 종류: 2PL, C2PL, S2PL, SS2PL - 참고 [위키피디아](https://en.wikipedia.org/wiki/Two-phase_locking).
+
+##### 쉬운코드 - MVCC
+
+- 특징
+  - tx 시작 시간 전(특정 시점)에 커밋 된 데이터만 읽는다. (DBMS마다 그 시점은 다를 수 있다.)
+  - 데이터 변화(write)이력을 관리한다.
+  - read와 write는 서로를 block하지 않는다.
+    - (? 어차피 snapshot이 있는데 block이 생길수 있나? 🤔)
+
+- PostgreSQL의 경우 같은 데이터를 수정한 경우, 나중에 수정한 tx가 실패한다. 하지만 MySQL은 이를 지원하지 않는다. (책에서도 나왔던거 같음.) 이 경우 Lock을 지정해줘서 Locking read를 사용해야 한다.
+- 트랜잭션마다 isolation level을 다르게 설정할 수 있다.
+- write skew는 repeatable read에서 발생할 수 있다. 이 경우 locking read를 사용하거나 serializable level을 사용해야 한다.
+
+##### 실제 DB의 운영?
+
+- MYSQL
+  - read uncommited: 
+  - read commited: 
+  - repeatable read: MVCC 사용
+  - serializable: Lock 기반 동작
+- PostgreSQL
+  - read uncommited: read commited 처럼 동작함. (진짜 read uncommited를 지원하는게 아니라 이름만 그런거인듯?)
+  - read commited:
+  - repeatable read: MVCC 사용
+  - serializable: SSI기법이 적용된 MVCC
 
 # 정리 계획
 
