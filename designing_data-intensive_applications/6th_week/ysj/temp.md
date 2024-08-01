@@ -207,18 +207,19 @@ isolation level의 필요성: 모든 이상현상이 발생하지 않게 (완전
   - DBMS가 해당 값의 과거를 기억하고 있다가, 커밋되면 보여주는 식으로 구현한다.
 - Repeatable read: 읽기 스큐 예방 - 일관성 있는 읽기가 필요한 백업(사본 만들기), 무결성 확인 등의 작업에서 필요하다.
   - 스냅숏 격리(Snapshot isolation)를 사용하여 구현한다.
+    - 내용이 길고 중요하므로 따로 정리함.
 - Serializable: 쓰기 스큐, 팬텀 읽기를 포함한 모든 이상현상 예방
   - 정말로 순차적으로 실행하기
   - 2단계 잠금 (2PL)
   - 직렬성 스냅숏 격리 (SSI)
 
-##### TODO isolation level 표준과 실제 구현의 괴리? 차이 설명하기
+##### isolation level 표준과 실제 구현의 괴리? 차이 설명하기
 
 실제로 DBMS가 제공하는 Repeatable read나 Serializable은 표준의 설명과 다르다.   
 각 DBMS마다 동일한 isolation level의 구현과 동작이 다르기까지 하다.    
 실제 사용 시에는 이 부분을 주의해야한다.   
 
-##### TODO 스냅숏 격리, MVCC 설명하기
+##### 스냅숏 격리, MVCC 설명하기
 
 스냅숏 격리는 보통 MVCC를 써서 구현한다.
 
