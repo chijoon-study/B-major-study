@@ -101,3 +101,20 @@ NTP서버와 정말 잘 동기화된 두 노드에서도 위와같은 문제는 
 
 때문에 물리적인 실제 시간이 안니 논리적 시간을 사용하는것이 더 안전한 대책일 수 있다.  
 논리적시간은 각 데이터의 버전처럼 이벤트간의 논리적인 순서를 측정한다.
+
+결국에 로컬에서 나타내는 시간은 다른 외부 노드들과 통신할때는 거의 의미가 없어지는 시간이다.  
+하지만 NTP에서 주기적으로 동기화를 한다할때, confidence intervals로 그나마 신뢰성 있게 시간을 나타낼 수 있다.  
+confidence intervals는 한 시점을 나타내지 않고 earliest, latest 두 시점으로 이루어지고,    
+두 시점 사이에 현재 시점이 있을 것을 보장해준다.  
+대표적으로 구글 spanner의 true time api가 이러한 방식으로 시간을 제공해준다.  
+
+또 이러한 시간의 불확실성 때문에 일어나는 문제가 이전에 이야기한 snapshot isolation에서 일어난다.  
+로컬이라면 단순히 monotonic clock을 이용해 transaction ID를 지정해주면 되겠지만 분산환경에서 이를 사용하려하면, 어떤 트랜잭션이 더 빠른건지 확신할 수 없다.  
+구글 spanner에서는 이를 confidence intervals를 사용해 a와b두 시점이 있을때 두 시점이 overlap되지 않는다면(e.g a.earliest < a.latest < b.earliest < b.latest) 예시에선 a가 b보다 일찍 일어낫다고 확신할 수 있다.  
+하지만 만약 둘이 overlap됐을때는 확신할 수 없다.  
+
+하지만 최대한 overlap되는 상황을 피하기 위해 구글 spanner는 읽기-쓰기 트랜잭션을 커밋할때 의도적으로 confidence intervals 그 간극만큼 잠시 대기한다.  
+또한 그 간극을 최소화 하기 위해 데이터 센터마다 원자시계나 GPS 리시버를 둔다.  
+
+라고 정리는 했지만 잘 이해 못하겠어서..  https://chatgpt.com/share/1063ca6e-4421-49a7-b1fa-f13807e0b756  
+읽기-쓰기 트랜잭션은 커밋할때 무조건 intervals의 latest시점으로 저장하고 직후 트랜잭션들은 이전 트랜잭션의 커밋 시점의 이후에 실행되도록한단건가 
