@@ -75,7 +75,7 @@ ACID중 I(isolation)
 > isolation의 엄격함과 DBMS의 트랜잭션 처리량과 사이에서 개발자가 트레이드할 수 있도록
 > 
 > isolation level을 제공하는 이유도 이것 때문이다.
-> 
+
 
 ##### 직렬성 관련해서 쉬운코드 설명
 
@@ -167,11 +167,13 @@ isolation level의 필요성: 모든 이상현상이 발생하지 않게 (완전
 
 ### isolation level 종류
 
-동시성 문제와 어떤 isolation level이 이걸 해결할 수 있는지를 낮은 레벨부터 높은 레벨까지 봄.
+isolation level에 따라서 이상현상의 예방을 보장해주는 정도가 달리진다.
+
+동시성(성능)이 더 좋아지는 대신 일부 이상현상을 허용한다.
 
 ![isolation level table](https://media.licdn.com/dms/image/D4D12AQHpQ9yVwj_wgw/article-cover_image-shrink_600_2000/0/1656329886789?e=2147483647&v=beta&t=U2UKYYVR9skiFO56MaLvaDvR92vD5QQ88IH1obWmsuQ)
 
-- isolation level 순서
+- isolation level 순서 - 순서대로 높아진다.
     - Read uncommited
     - Read commited
     - Repeatable read
@@ -182,17 +184,19 @@ isolation level의 필요성: 모든 이상현상이 발생하지 않게 (완전
 이상현상: 직렬성이 위배되는 현상
 
 - 더티 읽기(dirty read)
-    - commit 되지 않은 변화 (유효하지 않을 수 있음)를 읽는 경우 발생 가능
+    - commit 되지 않은 변화 (롤백하면 유효하지 않을 수 있음)를 읽는 경우 발생 가능
     - 꼭 다른 트랜잭션이 abort하지 않아도, 발생할 수 있음. (다중 객체 수정 작업 중 읽는다거나)
     - e.g. t1에서 수정한 커밋되지 않는 값을 t2에서 읽고 + 1해서 쓰고, t1이 롤백하는 경우
 - 더티 쓰기(dirty write)
-    - 나중에 수행된 트랜잭션이 먼저 다른 트랜잭션에서 commit 되지 않은 변화 (유효하지 않을 수 있음)를 덮어 쓰는 경우 발생 가능
+    - 나중에 수행된 트랜잭션이 먼저 다른 트랜잭션에서 commit 되지 않은 변화 (롤백하면 유효하지 않을 수 있음)를 덮어 쓰는 경우 발생 가능
       - 정상적인 recovery가 불가능하므로 허용되면 안됨.
 - 읽기 스큐(read skew) = non-repeatable read
   - inconsistent(비일관적인) 데이터 읽기
   - 한 트랜잭션에서 (변경하지 않은) 같은 데이터를 여러번 읽었을 때, 값이 바뀌는 현상
   - 각 트랜잭션은 독립적인 경우 문제가 없지만, 동시에 실행되는 경우 일관성 문제가 발생한다.
-- 갱신손실(lost update)
+  - 한 tx(tx1)가 지속되는 동안 다른 tx(tx2 or more)가 커밋되었으므로 변경된 값을 읽게 되는데, 이때 (tx1 입장에서) 읽기가 일시적으로 유효하지 않은 문제(non-repeatable read)가 생긴다.
+    - (이러한 특정 변경으로 인해서 더 이상 이전의 가정이 유효하지 않게 되는 경우, 이상현상이 발생할 수 있다. 읽기 스큐 뿐만 아니라 많은 부분에서 발생하므로 기억해두자. **가정이 깨지는 경우, 이상현상이 발생할 수 있다.**)
+- 갱신 손실(lost update)
   - 한 tx의 갱신을 다른 tx가 덮어씌우는 것. (없던 일처럼 되어버림)
   - 대표적인 예시로 카운트 증가가 있음.
 - 쓰기 스큐(write skew)
@@ -203,13 +207,63 @@ isolation level의 필요성: 모든 이상현상이 발생하지 않게 (완전
     - 없던 데이터가 생기는 것
     - 한 트랜잭션에서 실행된 쓰기가 다른 트랜잭션의 읽기 결과를 바꾸게 된다.
 
-## isolation level
+## isolation level의 구현과 보장
 
 ### Read uncommited
 
+아무 이상현상의 예방을 보장해주지 않는다.
+
 ### Read commited
 
+#### 예방하는 이상현상
+
+- 더티 읽기(dirty read)
+- 더티 쓰기(dirty write)
+
+#### 구현방법
+
+- 더티 쓰기 예방
+  1. 로우 수준 잠금: 쓰기를 위해선 락을 취득하고, 트랜잭션이 종료(커밋or롤백)되어야 락을 반환한다.
+- 더티 읽기 예방
+  1. 로우 수준 잠금: 읽기도 마찬가지로 락을 사용하면 구현 가능하나, 동시성 성능 문제로 잘 사용하지 않는다.
+  2. 이전 상태 기억하기: 과거에 커밋된 값과 현재 값을 기억한다. 새 값이 커밋되어야 다른 트랜잭션이 새 값을 읽을 수 있다.
+
 ### Repeatable read
+
+일관성 있는 읽기가 필요한 백업(사본 만들기), 무결성 확인 등의 작업에서 필요하다.
+
+#### 예방하는 이상현상
+
+- 읽기 스큐
+
+#### 구현방법
+
+- 읽기 스큐 예방
+  - 이를 해결하기 위해서는 트랜잭션에서 여러 시점의 상태를 읽을 수 있어야 한다.
+  - 주로 스냅숏 격리(snapshot isolation)를 사용해서 이 문제를 해결한다.
+  - (자세한 설명은 생략)
+
+#### 스냅숏 격리와 MVCC
+
+> 스냅숏 격리의 가장 중요한 핵심은 읽는 쪽에서 쓰는 쪽을 차단하지 않고, 쓰는 쪽에서 읽는 쪽을 차단하지 않는다는 것이다.
+> 따라서 데이터베이스는 잠금 경쟁 없이 쓰기 작업이 일상적으로 처리되는 것과 동시에 일관성 있는 스냅숏에 대해 오래 실행되는 읽기 작업을 처리할 수 있다.
+
+스냅숏 격리를 위해서는 객체마다 커밋된 버전 여러 개를 유지할 수 있어야 한다.
+
+데이터베이스 객체가 여러 버넌을 함께 유지하므로 이 기법을 MVCC(multiversion concurrency control)라고도 한다.
+
+Postgresql에서 MVCC를 구현하는 방법은 다음과 같다.
+![Postgresql에서 MVCC를 구현하는 방법](image-1.png)
+
+txid보다 더 이전 시점에 반영된 마지막 버전의 객체를 읽는다.
+
+사용하지 않는 버전은 가비지 컬랙터가 제거한다.
+
+##### 스냅숏 격리와 색인
+
+(이 부분은 책에서 설명하는데, 너무 일부 구현에 제한되어 있고 딱히 중요해보이지 않아서 스킵)
+
+색인 갱신을 최소화하거나 append-only/copy-on-write 등의 성능을 높이는 어려 기법이 있다.
 
 ### Serializable
 
@@ -238,3 +292,16 @@ isolation level의 필요성: 모든 이상현상이 발생하지 않게 (완전
 #### SQL 92 표준과 비판
 
 #### SQL 92 표준의 isolation level과 실제 구현의 괴리
+
+- MYSQL
+  - repeatable read: MVCC 사용
+  - serializable: Lock 기반 동작
+- PostgreSQL
+  - read uncommited: read commited 처럼 동작함. (진짜 read uncommited를 지원하는게 아니라 이름만 그런거인듯?)
+  - repeatable read: MVCC 사용
+  - serializable: SSI기법이 적용된 MVCC
+- IBM DB2: DB2의 반복 읽기는 직렬성을 가리키는데 사용된다.
+
+주로 repeatable read level은 실제로는 snapshot level이다. 그러나 동일한 요구사항을 만족하므로 표준에 맞춰서 repeatable read이라고 부르는 것. 여기에는 MySQL과 PostgreSQL이 해당된다.
+
+오라클에서는 serializable의 실제 구현은 repeatable read이다.
