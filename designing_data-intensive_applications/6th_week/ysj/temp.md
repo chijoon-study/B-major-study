@@ -243,7 +243,7 @@ lock의 필요성: 동시(동시라는 말이 정확하지는 않지만 대충)�
   - tx에서 모든 locking operation이 최초의 unlock operation 보다 먼저 수행되게 하는 것.
     - (이렇게 않하면 read-lock, write-lock을 써도 직렬성을 보장하지 못함. 자세한 건 책이나 영상 참고)
   - 이런 식으로 lock을 취득하는 phase, lock을 반환하는 phase로 나뉜다. ![alt text](image.png)
-    - 물론 모든 2PL이 위 이미지 같은 순서로 동작하는건 아니다. 각자 다를 수 있음.
+    - 물론 모든 2PL이 위 이미지 같은 순서로 동작하는건 아니다. 종류에 따라 락 취득 위치는 다를 수 있음.
 
 - 2PL의 dead lock: 예방하지 않늗다. 검출 후 해결(롤백) 방식
 
