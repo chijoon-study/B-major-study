@@ -35,7 +35,7 @@ read-committed도 skew가 발생할 수 있는데 아래와 같은 경우이다.
 
 snapshot isolation은 MVCC(multi version concurrency control)기법을 기반으로 구현된다.  
 MVCC는 객체의 여러버전을 유지하는 방법이다.  
-트랜잭션 별로 incrementing ID가 있고 본인 ID보다 높은 ID가 수정한 row를 읽을 경우 이전 버전을 찾아간다.  
+트랜잭션 별로 incrementing ID가 있고 본인 ID보다 높은 ID가 수정한 row를 읽을 경우 현재 트랜잭션이 원래 읽고 있던 이전 버전을 찾아간다.  
 
 ### lost update 
 위 방법들은 모두 read-only쿼리와 concurrency write간의 동시성 문제를 해결하는 방법이었다.  
