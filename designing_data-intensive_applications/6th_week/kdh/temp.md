@@ -50,7 +50,7 @@ MVCC는 객체의 여러버전을 유지하는 방법이다.
 UPDATE wiki_pages SET content = 'new content'
   WHERE id = 1234 AND content = 'old content';
 ```
-쿼리의 where clause를 보면 content = 'old content'가 있다.  
+쿼리의 where 절을 보면 content = 'old content'가 있다.  
 즉 read단계에서 읽은 값이 변경된적이 없을때만 위 쿼리가 실행되는 것이다.  
 하지만 이도 동시성 문제가 발생할 수 있는데, 다른 쓰기가 진행 중에는 위 조건이 참일 수 있기 때문이다.  
 
