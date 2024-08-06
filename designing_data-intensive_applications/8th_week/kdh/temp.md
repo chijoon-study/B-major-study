@@ -1,0 +1,29 @@
+## linearizability
+공통적으로 사용되는 가자 강한 일관성 모델중 하나이다.  
+클라이언트 측에서 단 하나의 DB 복제본만 있다고 생각하게 끔 하는 것이 목적이다.(하나의 복제본이면 총 두개의 DB를 말하는건가??)  
+
+말로만 들으면 조금 모호하다. 실제 예시를 통해 알아보자.  
+![](linearizability_1.png)
+클라이언트 측에서 생각했을때 위 사진은 전혀 모호하지 않고 정확하다.  
+그저 단하나만 정해주면 된다.  
+write 중의 read를 0으로 반환해줄지 1로 반환해줄지.  
+이를 linearizability에서는 다음과 같이 정한다.  
+![](linearizability_2.png)
+write중에 어떤 replica가 write중인 값을 읽었다면 다른 모든 replica도 write중인 가장 최신값으로 읽는다.  
+미래에 write연산이 실패할지는 고려하지 않는다.  
+만약 위 사진에서 A가 0으로 읽었다면 B는 0을 반환해도 되고 1을 반환해도 되지만, 이전 요청인 A가 1을 반환해줘버렸으면 무조건 1을 반환해줘야한다.  
+
+이러한 특성은 다음과 같은 상황을 해결해준다.  
+![](linearizability_case.png)
+Bob은 Alice보다 늦게 요청을 보냈음에도 더 오래된 값을 보고 있다.  
+하지만 위의 linearizability대로라면 그런일은 일어날 수 없다.  
+때문에 recency guarantee라고 불리기도 한다.  
+linearizability에서는 무조건 모든 연산을 atomic 연산으로보고 여러 연산을 하나로 묶지 않기에(transaction) 트랜잭션이 보장해주던 write-skew같은 문제는 해결해주지 않는다.  
+
+> 근데 여기서 하나 의문인 것이  
+> 문제상황같은게 발생하는 이유가 network delay로 인한 replication lag때문인데  
+> 다른 replica에서 가장 최신값을 보여줬는지 아닌지를 알려주는 것도 결국 network를 통해 전해줘야 하는데.. 이 뭔..  
+> 아직 linearizability를 다 읽은건 아니라 이후에 설명할 수도 있긴한데  
+ 
+
+
