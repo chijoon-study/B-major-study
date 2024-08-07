@@ -25,5 +25,14 @@ linearizability에서는 무조건 모든 연산을 atomic 연산으로보고 �
 > 다른 replica에서 가장 최신값을 보여줬는지 아닌지를 알려주는 것도 결국 network를 통해 전해줘야 하는데.. 이 뭔..  
 > 아직 linearizability를 다 읽은건 아니라 이후에 설명할 수도 있긴한데  
  
+이런 linearizability가 필요한 상황은 사실 정의할 수 있다.  
+바로소통 하는 두 개체간에 또 다른 채널이 있을때다.  
+위의 문제 상황을 생각해보자 Alice가 만약 없었다면 Bob은 본인이 보고 있는 화면이 이상하다 느꼈을까?  
+여러번 새로고침하다가 결국엔 경기 결과를 보게 됐을거다.  
+하지만 기존 두 객체(Bob과 서버)에 새로운 채널(Bob과 Alice간의 대화)이 추가 됐기에 문제 상황이 된 것이다.  
+
+![](when_linearizability_useful.png)
+위 상황에선 아직 file storage에 실제로 이미지가 업데이트 되지 않았을때 image resizer가 이미지를 fetch하는 문제가 발생할 수 있다.  
+이 또한 기존 두 객체(web server, image resizer)사이에 추가적인 채널(message queue)이 존재하기 때문이다.   
 
 
