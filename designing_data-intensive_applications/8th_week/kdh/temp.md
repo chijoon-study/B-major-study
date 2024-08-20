@@ -130,4 +130,3 @@ in-doubt상태에서는 트랜잭션이 끝나지 않고 계속 lock을 걸고 �
 때문에 participant가 단독으로 abort나 commit하는 휴리스틱 결정이라는 방법이 있는데, 이는 atomicity를 해칠 수 있으므로 정말 재앙적인 상황에서만 조심스럽게 사용된다.  
 
 
-
