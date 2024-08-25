@@ -35,4 +35,24 @@ pipes연산은 stdin과 stdout을 다른프로그램과 연결할 수 있게 해
 이러한 Unix에도 치명적인 한계가 있는데 바로 single machine에서만 동작한다는 것이다.  
 때문에 Hadoop이 개발되었다.  
 
+## MapReduce
+MapReduce에서 한 record를 처리하는 단위를 job이라고 부른다.  
+job은 Map과 Reduce연산으로 나누어져있는데, Map에서는 보통 Reduce연산에서 처리할 수 있게끔 데이터를 key, value로 추출하고 정렬하는 등 전처리를 하고(e.g. nginx log -> ["1, /api/1", "1, /api/1", "1, /api/2]), 
+Map연산이 끝난 output이 Reduce연산으로 들어가 주된 데이터 처리를 한다(e.g. 특정 페이지 방문자 수 합계)  
+데이터 처리 방식은 Unix tool을 사용하는 것과 거의 비슷하지만, 여러 machine에서 돌릴 수 있다는 장점이 있다.  
+또한 실제 MapReduce job 코드를 쓸데에는 이러한 병렬 부분은 직접 작성하지 않아도 알아서 해준다.  
+
+여러 machine에서 돌리는 만큼 데이터를 주고 받으며 network에 부하가 생길 수 있는데, 때문에 데이터를 연산하는 노드로 보내는 것이 아닌 job을 데이터를 갖고있는 노드에 할당에 Map연산을 수행한 후 비교적 크기가 줄어든 결과를 취합해 Reduce연산을 수행한다.
+![](MapReduce.png)
+
+책에서 설명하는대로면 job의 단위는 정렬이라 생각해도 된다.  
+Map과 Reduce에서는 정렬작업이 없고(Reduce중에 여러 sorted file을 LSM과 비슷한 방법으로 sorted order를 보존하는 것을 제외하면)  
+그 사이 shuffle이라고 불리는 작업에서만 sort가 일어나기 때문이다.  
+
+때문에 job하나로만 모든 데이터를 처리하는 작업을 하기엔 한계가 있고, 대부분의 데이터 처리 작업은 여러 job이 chained된 workflow라는 단위로서 작동한다.  
+하지만 MapReduce framework에선 한 workflow내에 job들은 그저 서로 다른 job일 뿐이므로 Unix에서 pipes연산을 통해 output을 다른 연산의 input으로 보낸던 것과 달리, directory를 명시해주어 한 job의 output을 다른 job의 input으로 인식하게끔 해야한다.  
+또한 MapReduce는 실패한 job의 output은 제거, 무시해버리기에 한 job은 이전 job이 성공해야만 동작을 시작할 수 있다.  
+이러한 dataflow를 관리하기 위해 airflow를 포함한 여러 tool들이 개발 되었다.  
+
+
 
