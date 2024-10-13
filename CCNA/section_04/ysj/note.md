@@ -81,7 +81,7 @@ IOS가 시작되면 시작 구성으로부터 관리자 구성을 불러옴.
 
 ## 후기
 
-- [GPT 한테 물어본 모놀리식, 마이르로 커널](https://chatgpt.com/share/6703e562-0bcc-8009-aa29-17ddff8c058b)
+- [GPT 한테 물어본 모놀리식, 마이크로 커널](https://chatgpt.com/share/6703e562-0bcc-8009-aa29-17ddff8c058b)
 
 ## 실습
 
