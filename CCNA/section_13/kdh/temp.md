@@ -1,5 +1,5 @@
 ## troubleshooting methodology
-![](troubleshooting_methodology.png)
+![](src/troubleshooting_methodology.png)
 위 사진은 씨스코에서 추천하는 네트워크 문제 해결 절차이다.
 
 어느 문제를 해결할때 비슷하듯 문제 정의, 정보 수집, 가설 수립, 가설 검증의 단계로 이루어져있다.  

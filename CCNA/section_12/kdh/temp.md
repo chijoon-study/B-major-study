@@ -1,13 +1,13 @@
 ## DNS
 DNS는 FQDN(Fully Qualified Domain Name)를 IP주소로 변환해주는 시스템이다.  
-![](DNS_command.png)
+![](src/DNS_command.png)
 위 명령어를[[1]](#1) 통해 Cisco 라우터를 DNS client와 서버로 설정할 수 있다.  
 실제로는 라우터를 DNS server로 사용하는 경우는 많지 않다.  
 
 
 ## ARP
 ARP는 IP주소를 MAC주소로 변환해주는 시스템이다.  
-![](ARP_on_layer2.png)
+![](src/ARP_on_layer2.png)
 위 사진을 기준으로 설명하면 sender는 receiver의 IP주소는 알지만 MAC 주소를 알지 못한다.  
 때문에 스위치로 receiver의 IP에 대해 arp요청을 broadcast 요청으로 날린다.  
 때문에 해당 서브넷의 모든 컴퓨터에 요청이 가고 receiver또한 해당 요청을 받으며 본인에 대한 ARP요청임을 확인한 receiver는 수신한 패킷의 sender MAC 주소를 사용해 패킷을 만들어 응답한다.  

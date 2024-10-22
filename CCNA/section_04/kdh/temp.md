@@ -6,7 +6,7 @@ https://www.reddit.com/r/programming/comments/grckjf/what_is_the_proper_way_to_p
 
 
 ## console cable
-![](console_cable.png)
+![](src/console_cable.png)
 
 CISCO장치가 이미 세팅된 후라면 네트워크를 통해 접속이 가능하지만, 맨 처음 CISCO 장치에는 IP주소가 설정돼있지 않다.  
 때문에 초기세팅은 로컬에서 직접 접속해 해주어야하는데 그때 콘솔 케이블을 통해 연결이 가능하다.  
@@ -16,7 +16,7 @@ CISCO장치가 이미 세팅된 후라면 네트워크를 통해 접속이 가�
 IP주소는 부팅이 완전히 된 이후에야 할당이 되기 때문이다.  
 
 ## CISCO IOS command line
-![](CISCO_IOS_hierarchy.png)
+![](src/CISCO_IOS_hierarchy.png)
 CISCO 장치는 장치를 설정할 수 있게 운영체제가 깔려있다.  
 장치마다 운영체제가 조금씩 다른 경우가 있지만, 명령어는 거의 같다고 한다.  
 위 사진처럼 CISCO 운영체제에는 여러 계층이있고, 각 계층마다 사용할 수 있는 명령어가 다르다.  
@@ -28,10 +28,10 @@ CISCO 장치는 장치를 설정할 수 있게 운영체제가 깔려있다.
 단축어로 가능한 명령어 집합을 확인하고 싶다면 ?를 사용하면 된다.  
 예를 들어 `dis?`를 입력하면 `dis`로 가능한 명령어 집합인 `disconnect`, `disable`이 뜰 것이다.  
 또한 명령어는 인자를 받을 수 있는데, 그 경우 명령어에 한칸 띄우고 ?를 하면된다.
-![](question_mark_command.png)
+![](src/question_mark_command.png)
 
 뒤에 인자를 받을 수 있는 명령어의 경우 인자를 입력하지 않을 경우 "불완전한 명령어입니다."라는 에러가 뜰텐데, 위에서 설명한 ?를 통해 명령어 인자를 출력했을때 아래 사진과 같이 <cr>이 존재한다면 인자없이도 어떠한 명령을 수행하는 명령어라는 뜻이다.  
-![](CR.png)
+![](src/CR.png)
 
 
 ## shortcut

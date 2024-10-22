@@ -1,4 +1,4 @@
-![](assg_topology.png)
+![](src/assg_topology.png)
 과제 폴더안에있는 pkt를 실행시키면 나오는 토폴로지
 
 과제 pdf를 처음 키게 되면 순서대로
