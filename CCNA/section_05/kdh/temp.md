@@ -23,11 +23,11 @@
 
 
 ## TCP / UDP
-![](TCP_header.png)
+![](src/TCP_header.png)
 TCP는 3-way-handshake를 통해 수신자와 송신자를 연결한 후에 헤더에 여러 검증용 정보를 담아 reliability있는 통신을 진행한다.  
 만약 수신자측에서 패킷이 전부 오지 않은거 같다면 송신자에 다시 요청을 보내기도한다. 
 
-![](UDP_header.png)
+![](src/UDP_header.png)
 이에 반해 UDP는 best effort(난 최선을 다했어)방식을 사용해 한번 패킷을 보내고나면 패킷이 제대로 갔는지는 확인하지 않는다.  
 
 때문에 당연히 속도가 중요할땐 UDP를 데이터의 신뢰성이 중요할땐 TCP를 사용한다.  
