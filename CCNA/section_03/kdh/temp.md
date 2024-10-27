@@ -8,7 +8,7 @@
 - scalability
 - reliability
 
-![](topology.png)
+![](src/topology.png)
 
 위 사진처럼 엔드포인트(PC, 서버, 프린터)를 어떻게 연결하고 멀리있는 엔드포인트끼리는 어떻게 연결하는지 설계도?를 **topology**라고 한다.  
 **speed**는 말그대로 속도이고 보통 속도가 빠를수록 **cost**가 높다.  
@@ -21,7 +21,7 @@
 이제는 대부분 알겠지만 OSI 7 layer는 실제로 쓰이지는 않는 개념적인 모델이다.  
 하지만 그럼에도 교육, 현업자 간의 소통에서 자주, 편리하게 쓰이기 때문에 알아두어야한다.  
 
-![](OSI7layer_sender.png)
+![](src/OSI7layer_sender.png)
 
 OSI 7 layer에서 데이터를 전송할때 송신자 측에서는 상위계층의 데이터를 하위계층이 header로 감싼다.  
 7계층에서 이메일 주소와 내용을 보내면 6계층에서 7계층의 데이터는 body에 담고 6계층의 정보인 확장자를 header에 담는다.  
@@ -37,12 +37,12 @@ TCP/UDP는 신뢰성이 속도보다 중요할때 TCP 영상, 음성과 같이 �
 3계층에선 중요한 것이 IP주소이다.  
 3계층의 operator인 라우터와 이 IP주소를 통해 지리적으로 서로다른 곳에 있는 두 호스트의 연결을 관리한다.  
 
-![](TCP_IP.png)
+![](src/TCP_IP.png)
 
 그리고 이제는 대부분 알듯 실제 현업에선 위 사진의 TCP/IP stack이 쓰인다.  
 물론 TCP/IP stack도 어떤 프로토콜이 아니라 개념적인 모델이기에 OSI 7 layer와 크게 다르지는 않다.
 
-![](TCP_IP_terminology.png)
+![](src/TCP_IP_terminology.png)
 
 TCP/IP stack의 용어를 좀 알아보면, 정확히는 두 호스트 간 통신에 쓰이는 개체를 PDU라고 부른다.  
 또한 각 계층마다 OSI 기준으로 7계층이면 data 4계층이면 segement 3계층이면 packet이라고 불리지만, 실제로는 그냥 packet으로 퉁쳐서 부르는 경우가 많다.  
