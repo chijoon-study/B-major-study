@@ -23,7 +23,7 @@
 
 ### Ensure that all other routers learn via RIP how to reach the Internet.
 `router rip`
-`deefault-information originate`
+`default-information originate`
 
 ### Verify all routers have a route to the Internet.
 `sh ip route`
