@@ -20,7 +20,10 @@ area라는 개념은 네트워크에 계층을 형성한다.
 area0번과 나머지 area를 나누는 라우터를 ABR(Area Border Router)라고한다.  
 계층 구조의 장점은 경로 요약이다.  
 area0번에서 나머지 하위 area들의 경로를 학습할때 ABR이 경로를 요약해서 알려준다.  
-경로요약의 장점은 이전에 설명했으니 생략하겠다.  
+경로요약의 장점은 이전에 설명했으니 생략하겠다.
+
+https://www.udemy.com/course/cisco-ccna-complete-guide-korean/learn/lecture/29448304#questions/22597111
+ABR에서 경로 요약을 자동으로 해줄 수 있을거 같은데, 강의에선 그런 모습은 안나오고 명령어로 직접 해주어가지고 질문 남겨둠
 
 
 ## metric
