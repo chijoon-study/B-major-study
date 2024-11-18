@@ -215,11 +215,11 @@ Router(config)# ipv6 route ::/0 2001:DB8:0:1::1
      |         n bits         |  m bits   |    128-n-m   |
      ```
      - 예: `2001:0db8:85a3:0000:0000:8a2e:0370:7334`  
-       - `2001:0db8:85a3` → 글로벌 라우팅 프리픽스.  
+       - `2001:0db8:85a3` → 글로벌 라우팅 프리픽스.   = (네트워크 ID)
        - `0000` → 서브넷 ID.  
        - `0000:8a2e:0370:7334` → 인터페이스 ID.  
 
-2. **링크 로컬 주소 (Link-Local Address)**  
+2. **링크 로컬 주소 (Link-Local Address)** - 아래 추가 설명 있음.
    - **정의**: 동일 링크(Local Network Segment) 내에서만 사용 가능한 자동 생성 주소.  
    - **범위**: `FE80::/10` (즉, `FE80::`부터 `FEBF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF`까지).  
    - **특징**:  
@@ -240,7 +240,7 @@ Router(config)# ipv6 route ::/0 2001:DB8:0:1::1
      - `/64` 서브넷 마스크 필수 (SLAAC 호환성).  
      - 조직 내부에서 라우팅에 사용.  
 
-4. **멀티캐스트 주소 (Multicast Address)**  
+4. **멀티캐스트 주소 (Multicast Address)**  - 아래 추가 설명 있음.
    - **정의**: 특정 그룹에 메시지를 전송하기 위한 IPv6 주소.  
    - **범위**: `FF00::/8`  
    - **주요 주소**:  
@@ -263,8 +263,8 @@ Router(config)# ipv6 route ::/0 2001:DB8:0:1::1
 
 ### **추가 설명**  
 1. **글로벌 유니캐스트 주소와 서브넷**  
-   - `/64`는 SLAAC와 호환성을 위해 기본적으로 사용되며, 각 서브넷은 **2^64**개의 주소를 가질 수 있음.  
-   - `/48`은 ISP가 고객에게 제공하는 기본 할당 크기.  
+   - `/64`는 SLAAC와 호환성을 위해 기본적으로 사용되며, **2^64**개의 주소를 가질 수 있음. (대충 10^18 × 18.4 정도)
+   - `/48`은 ISP가 고객에게 제공하는 기본 할당 크기. `/48`에서 65,536개의 `/64` 서브넷 생성 가능.
 
 2. **링크 로컬 주소**  
    - 기본적으로 모든 IPv6 인터페이스에 생성되므로, IPv6 활성화 시 라우터 설정 없이도 라우터 간 통신 가능.  
@@ -430,3 +430,159 @@ IPv6 서브넷 마스크와 관련된 RFC 문서는 다음과 같습니다. 이�
 - **/128**: 고정된 주소가 필요한 특정 장치에서 사용.
 
 이 RFC 문서들은 인터넷 주소 구조 및 서브넷 설계와 관련된 정책 및 기술적 기준을 제공합니다. RFC 문서는 [RFC Editor 웹사이트](https://www.rfc-editor.org/)에서 무료로 열람할 수 있습니다.
+
+---
+
+Link-Local Address(LLA)는 동일한 물리적 링크/서브넷 내에서만 통신이 가능합니다.
+
+구체적인 예시와 함께 설명하겠습니다:
+
+1. 라우터 직접 연결 시나리오
+```
+R1 [f0/0] --- [f0/1] R2
+fe80::1        fe80::2
+```
+- R1과 R2는 서로 LLA로 통신 가능
+- 같은 물리적 링크에 연결되어 있기 때문
+
+2. 스위치를 통한 연결 시나리오
+```
+R1 --- SW1 --- R2
+fe80::1        fe80::2
+```
+- R1과 R2는 같은 브로드캐스트 도메인에 있어 LLA로 통신 가능
+- Layer 2 스위치는 링크의 범위를 확장
+
+3. 라우터를 통한 통신 시나리오
+```
+R1 --- R2 --- R3
+fe80::1  fe80::2  fe80::3
+```
+- R1은 R2와 LLA 통신 가능
+- R2는 R3와 LLA 통신 가능
+- R1은 R3와 LLA 통신 불가능 (다른 링크)
+
+실제 사용 사례:
+1. 라우팅 프로토콜
+```
+R1(config)# ipv6 ospf neighbor fe80::2
+```
+- OSPF, EIGRP 등이 LLA로 인접 라우터와 통신
+
+2. 기본 게이트웨이 설정
+```
+Host# ipv6 route ::/0 fe80::1
+```
+- 호스트가 기본 게이트웨이를 LLA로 참조
+
+3. 라우터 간 직접 핑 테스트
+```
+R1# ping ipv6 fe80::2 source f0/0
+```
+- 출력 인터페이스 지정 필수
+- 같은 링크의 라우터로만 핑 가능
+
+주의사항:
+- 다른 링크로는 라우팅 불가
+- 인터페이스 지정 필요
+- 동일한 LLA 주소를 다른 링크에서 사용 가능
+
+---
+
+IPv6 Multicast Address의 주요 사용 예시:
+
+1. 모든 노드 멀티캐스트 (FF02::1)
+```
+R1(config)# ping FF02::1
+```
+- 해당 링크의 모든 IPv6 호스트에 도달
+- 네트워크 장비 검색에 사용
+- IPv4의 브로드캐스트 대체
+
+2. 모든 라우터 멀티캐스트 (FF02::2)
+```
+R1(config)# ping FF02::2
+```
+- 해당 링크의 모든 라우터에 도달
+- 라우터 검색에 사용
+- 라우팅 프로토콜 정보 교환
+
+3. DHCP 관련 멀티캐스트
+- All DHCP Servers: FF05::1:3
+- All DHCP Relay Agents: FF02::1:2
+```
+Client -> FF05::1:3 (DHCP 요청)
+Server -> Client (응답)
+```
+
+4. 라우팅 프로토콜용 멀티캐스트
+- RIPng: FF02::9
+- OSPFv3: FF02::5 (모든 OSPF 라우터)
+- OSPFv3: FF02::6 (DR/BDR 라우터)
+```
+R1(config)# ipv6 router ospf 1
+R1(config-rtr)# neighbor FF02::5
+```
+
+5. Solicited-Node 멀티캐스트 (FF02:0:0:0:0:1:FF00::/104)
+```
+예: 주소가 2001:db8::1234면
+Solicited-Node MC: FF02::1:FF00:1234
+```
+- IPv6 neighbor discovery에 사용
+- MAC 주소 해석 (ARP 대체)
+- 마지막 24비트만 사용
+
+6. MLD (Multicast Listener Discovery)
+```
+FF02::16 - MLDv2 멀티캐스트
+```
+- 멀티캐스트 그룹 관리
+- 호스트의 멀티캐스트 참여/이탈 처리
+
+실제 동작 예시:
+```
+1. Neighbor Discovery
+Host A -> FF02::1:FF00:1234 (Neighbor Solicitation)
+Host B -> Host A (Neighbor Advertisement)
+
+2. Router Discovery
+Router -> FF02::1 (Router Advertisement)
+Host -> FF02::2 (Router Solicitation)
+
+3. DHCP
+Client -> FF05::1:3 (DHCP Solicit)
+Server -> Client (DHCP Advertise)
+```
+
+이점:
+- 효율적인 네트워크 리소스 사용
+- 목적지 기반 필터링 가능
+- 특정 서비스별 주소 할당으로 관리 용이
+
+---
+
+IPv6 멀티캐스트는 범위(Scope)에 따라 다르게 동작합니다:
+
+1. Link-Local Scope (FF02::/16)
+- 같은 링크 내에서만 통신
+- 라우터가 포워딩하지 않음
+- 예시:
+  - FF02::1 (모든 노드)
+  - FF02::2 (모든 라우터)
+  - FF02::5 (OSPF 라우터)
+  - FF02::1:2 (DHCP 릴레이)
+
+2. Site-Local Scope (FF05::/16)
+- 사이트/조직 내부에서 라우팅 가능
+- 외부로는 라우팅되지 않음
+- 예시:
+  - FF05::1:3 (모든 DHCP 서버)
+  - FF05::1:4 (모든 DHCP 에이전트)
+
+3. Global Scope (FF0E::/16)
+- 전역적으로 라우팅 가능
+- 멀티캐스트 라우팅 프로토콜 필요
+- 조직간 멀티캐스트 통신에 사용
+
+대부분의 일반적인 용도는 Link-Local Scope를 사용합니다.
