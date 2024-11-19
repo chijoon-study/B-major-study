@@ -174,7 +174,8 @@ SLAAC(Stateless Address Auto-configuration) (9/16)
 
 9.3 제한사항
 - DNS 정보 제공 불가 - (Note: 여전히 DHCP 필요, DHCP의 기능을 더 대체하는 기능은 아직 발전 중 or 반영이 안됨.)
-- 추가 정보는 DHCPv6 필요
+- 추가 정보(DNS 등)는 여전히 DHCP 필요
+  - 그러나 IP 주소 구성 자체는 Stateless 함.
 
 IPv6 라우팅 (10/16)
 
